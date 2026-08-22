@@ -6,7 +6,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/makekosmos/visuals.git"
+    "url": "git+https://github.com/makekosmos/kosmos-imago.git"
   },
   "packageManager": "bun@1.3.14",
   "private": false,
