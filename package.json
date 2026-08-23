@@ -1,20 +1,26 @@
 {
   "name": "@makekosmos/visuals",
   "version": "0.1.2",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/makekosmos/kosmos-imago.git"
+    "url": "git+https://github.com/makekosmos/imago.git"
   },
-  "packageManager": "bun@1.3.14",
-  "private": false,
+  "files": [
+    "dist",
+    "components",
+    "composables",
+    "patterns",
+    "runtime",
+    "theme",
+    "index.ts",
+    "README.md",
+    "STORYBOOK.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./index.ts",
-  "files": ["dist", "components", "composables", "patterns", "runtime", "theme", "index.ts", "README.md", "STORYBOOK.md"],
   "exports": {
     ".": {
       "types": "./index.ts",
@@ -25,6 +31,9 @@
     "./theme/css": "./theme/css-variables.css",
     "./components/sidebar.css": "./components/sidebar.css",
     "./components/settings-shell.css": "./components/settings-shell.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "build": "vite build",
@@ -60,5 +69,6 @@
     "@lucide/vue": "*",
     "vue": "^3.0.0",
     "vue-router": "^4.5.0 || ^5.0.0"
-  }
+  },
+  "packageManager": "bun@1.3.14"
 }
