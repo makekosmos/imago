@@ -70,7 +70,7 @@ function toggle() {
 
 function onDocPointerDown(e: PointerEvent) {
   if (!open.value || !anchorRef.value) return;
-  if (anchorRef.value.contains(e.target as Node)) return;
+  if (e.target instanceof Node && anchorRef.value.contains(e.target)) return;
   open.value = false;
 }
 

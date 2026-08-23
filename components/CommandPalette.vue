@@ -21,7 +21,7 @@ const listRef = ref<HTMLElement>();
 watch(
   () => props.query,
   (value) => {
-    if (typeof value !== "string" || value === query.value) {
+    if (value === undefined || value === query.value) {
       return;
     }
 
@@ -67,7 +67,7 @@ function handleInputKeydown(event: KeyboardEvent) {
 
 function handleListKeydown(event: KeyboardEvent) {
   const items = [...(listRef.value?.querySelectorAll<HTMLElement>("[data-cmd-item]") ?? [])];
-  const index = items.indexOf(document.activeElement as HTMLElement);
+  const index = items.findIndex((item) => item === document.activeElement);
 
   if (event.key === "ArrowDown") {
     event.preventDefault();

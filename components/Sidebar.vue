@@ -115,9 +115,9 @@ const keyLayoutAliases: Record<string, string> = {
   ",": "б",
   ".": "ю",
 };
-const reverseKeyLayoutAliases = Object.fromEntries(
+const reverseKeyLayoutAliases: Record<string, string> = Object.fromEntries(
   Object.entries(keyLayoutAliases).map(([latinKey, localizedKey]) => [localizedKey, latinKey]),
-) as Record<string, string>;
+);
 
 const SIDEBAR_WIDTH_STEP = 8;
 
@@ -155,7 +155,7 @@ const configRef = shallowRef<SidebarConfig>({
 const groupedProjectSections = computed<SidebarProjectGroup[]>(() => {
   if (props.projectGroups.length > 0) {
     return props.projectGroups.filter(
-      (group) => group.items.length > 0 || typeof group.onAction === "function",
+      (group) => group.items.length > 0 || Boolean(group.onAction),
     );
   }
 

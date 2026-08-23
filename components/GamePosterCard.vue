@@ -9,7 +9,7 @@ interface GamePosterCardProps {
   coverSrc?: string | null;
   className?: string;
   linkComponent?: string | Component;
-  linkProps?: Record<string, unknown>;
+  linkProps?: Record<string, string | number | boolean | null | undefined>;
 }
 
 const props = withDefaults(defineProps<GamePosterCardProps>(), {

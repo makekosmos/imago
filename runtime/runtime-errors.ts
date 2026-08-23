@@ -9,9 +9,9 @@ type WindowWithRuntimeErrorHook = Window & {
   __kosmosConsoleOnlyRuntimeErrors?: boolean;
 };
 
-function describeReason(reason: unknown): unknown {
+function describeReason(reason: Error | string | null | undefined): Error | string {
   if (reason instanceof Error) return reason;
-  return reason ?? "(no error detail)";
+  return reason == null ? "(no error detail)" : String(reason);
 }
 
 export function installConsoleOnlyRuntimeErrors(
@@ -22,7 +22,10 @@ export function installConsoleOnlyRuntimeErrors(
   const preventDefault = options.preventDefault ?? true;
 
   app.config.errorHandler = (err, _instance, info) => {
-    console.error(`[${label}] Vue runtime error${info ? ` (${info})` : ""}:`, describeReason(err));
+    console.error(
+      `[${label}] Vue runtime error${info ? ` (${info})` : ""}:`,
+      describeReason(err instanceof Error ? err : String(err)),
+    );
   };
 
   const globalWindow = window as WindowWithRuntimeErrorHook;
@@ -32,13 +35,13 @@ export function installConsoleOnlyRuntimeErrors(
   window.addEventListener("error", (event) => {
     console.error(
       `[${label}] Unhandled runtime error:`,
-      describeReason(event.error ?? event.message),
+      describeReason(event.error instanceof Error ? event.error : event.message),
     );
     if (preventDefault) event.preventDefault();
   });
 
   window.addEventListener("unhandledrejection", (event) => {
-    console.error(`[${label}] Unhandled promise rejection:`, describeReason(event.reason));
+    console.error(`[${label}] Unhandled promise rejection:`, String(event.reason));
     if (preventDefault) event.preventDefault();
   });
 }

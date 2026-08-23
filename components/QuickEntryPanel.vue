@@ -57,9 +57,14 @@ function save() {
     scheduledDate: scheduledDate.value,
     projectId: selectedProjectId.value,
     billable: billable.value,
-    price: Number.isFinite(parsedPrice) ? (parsedPrice as number) : null,
+    price: Number.isFinite(parsedPrice) ? parsedPrice : null,
   });
   close();
+}
+
+function inputValue(event: Event): string {
+  // SAFETY: these handlers are attached only to input and textarea elements.
+  return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
 }
 
 function onTitleKeyDown(e: KeyboardEvent) {
@@ -96,7 +101,8 @@ watch(
 // Идиома `watch open ⇒ add/remove` + `onBeforeUnmount → remove` — symmetric и
 // безопасна (mirror ContextMenu.vue).
 function onProjectMenuOutsideClick(e: MouseEvent) {
-  if (projectMenuRef.value && !projectMenuRef.value.contains(e.target as Node)) {
+  // SAFETY: MouseEvent.target is a DOM node for events dispatched by document.
+  if (projectMenuRef.value && e.target instanceof Node && !projectMenuRef.value.contains(e.target)) {
     showProjectMenu.value = false;
   }
 }
@@ -133,7 +139,7 @@ onBeforeUnmount(() => {
           placeholder="Новая задача"
           :value="title"
           class="w-full border-0 bg-transparent text-sm font-semibold text-(--foreground) outline-none placeholder:text-(--muted-foreground)"
-          @input="title = ($event.target as HTMLInputElement).value"
+          @input="title = inputValue($event)"
           @keydown="onTitleKeyDown"
         />
 
@@ -142,7 +148,7 @@ onBeforeUnmount(() => {
           :value="notes"
           :rows="2"
           class="w-full resize-none border-0 bg-transparent text-xs text-(--muted-foreground) outline-none placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)]"
-          @input="notes = ($event.target as HTMLTextAreaElement).value"
+          @input="notes = inputValue($event)"
           @keydown="onNotesKeyDown"
         />
       </div>
@@ -184,7 +190,7 @@ onBeforeUnmount(() => {
               placeholder="Цена"
               :value="priceInput"
               class="w-16 border-0 bg-transparent text-xs text-(--foreground) outline-none placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_60%,transparent)]"
-              @input="priceInput = ($event.target as HTMLInputElement).value"
+              @input="priceInput = inputValue($event)"
             />
           </label>
 

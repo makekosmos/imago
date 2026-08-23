@@ -23,7 +23,8 @@ const left = shallowRef(0);
 const top = shallowRef(0);
 
 function show(event: Event): void {
-  const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  if (!(event.currentTarget instanceof HTMLElement)) return;
+  const bounds = event.currentTarget.getBoundingClientRect();
   left.value =
     props.placement === "top-start"
       ? bounds.left

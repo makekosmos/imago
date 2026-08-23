@@ -8,9 +8,8 @@
 // `installScrollFadeListener()`. Один listener на document с capture:true —
 // он ловит scroll'ы любых вложенных контейнеров.
 
-const SCROLL_TIMER_KEY: unique symbol = Symbol("kosmos-scroll-timer");
-
-type ScrollableElement = HTMLElement & { [SCROLL_TIMER_KEY]?: number };
+const scrollTimers = new WeakMap<HTMLElement, number>();
+const scrollFadeOff = new WeakMap<Document | HTMLElement, () => void>();
 
 export interface InstallScrollFadeOptions {
   /** Задержка перед снятием `data-scrolling`, мс. Default 600. */
@@ -30,9 +29,9 @@ export function installScrollFadeListener(options: InstallScrollFadeOptions = {}
   const idleMs = options.idleMs ?? 600;
   const root = options.root ?? document;
 
-  const rootAny = root as unknown as { __kosmosScrollFadeOff?: () => void };
-  if (rootAny.__kosmosScrollFadeOff) {
-    return rootAny.__kosmosScrollFadeOff;
+  const existingOff = scrollFadeOff.get(root);
+  if (existingOff) {
+    return existingOff;
   }
 
   const handler = (e: Event): void => {
@@ -40,22 +39,25 @@ export function installScrollFadeListener(options: InstallScrollFadeOptions = {}
     if (!(target instanceof HTMLElement)) return;
     if (!target.classList.contains("kosmos-scroll")) return;
     target.setAttribute("data-scrolling", "1");
-    const el = target as ScrollableElement;
-    if (el[SCROLL_TIMER_KEY] !== undefined) {
-      window.clearTimeout(el[SCROLL_TIMER_KEY]);
+    const timer = scrollTimers.get(target);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
     }
-    el[SCROLL_TIMER_KEY] = window.setTimeout(
-      () => target.removeAttribute("data-scrolling"),
-      idleMs,
+    scrollTimers.set(
+      target,
+      window.setTimeout(
+        () => target.removeAttribute("data-scrolling"),
+        idleMs,
+      ),
     );
   };
 
   root.addEventListener("scroll", handler, { capture: true, passive: true });
 
   const off = (): void => {
-    root.removeEventListener("scroll", handler, { capture: true } as AddEventListenerOptions);
-    delete rootAny.__kosmosScrollFadeOff;
+    root.removeEventListener("scroll", handler, true);
+    scrollFadeOff.delete(root);
   };
-  rootAny.__kosmosScrollFadeOff = off;
+  scrollFadeOff.set(root, off);
   return off;
 }

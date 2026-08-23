@@ -36,6 +36,7 @@ const config: StorybookConfig = {
       "tailwindcss",
     ];
     config.ssr = config.ssr ?? {};
+    // SAFETY: Vite's SSR config accepts this optional dependency list.
     (config.ssr as { noExternal?: string[] }).noExternal = [
       "@lucide/vue",
       "@fontsource-variable/inter",

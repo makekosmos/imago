@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import { ref } from "vue";
 import QuickEntryPanel from "./QuickEntryPanel.vue";
+import type { QuickEntrySavePayload } from "./types";
 
 const meta: Meta<typeof QuickEntryPanel> = {
   title: "Overlays/QuickEntryPanel",
@@ -22,7 +23,7 @@ export const Default: Story = {
     components: { QuickEntryPanel },
     setup() {
       const open = ref(true);
-      function onSave(payload: unknown) {
+      function onSave(payload: QuickEntrySavePayload) {
         console.log("save", payload);
         open.value = false;
       }
@@ -43,7 +44,7 @@ export const WithDefaults: Story = {
     setup: () => ({
       open: ref(true),
       projects,
-      onSave: (p: unknown) => console.log(p),
+      onSave: (p: QuickEntrySavePayload) => console.log(p),
     }),
     template: `
       <QuickEntryPanel

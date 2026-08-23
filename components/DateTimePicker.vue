@@ -117,7 +117,18 @@ const dateIso = computed(() => {
   return `${formatIsoYear(draft.value.year)}-${pad(draft.value.month + 1)}-${pad(draft.value.day)}`;
 });
 
-function parseDateOnlyIso(iso: string): { year: number; month: number; day: number } | null {
+interface DateParts {
+  year: number;
+  month: number;
+  day: number;
+}
+
+interface TimeParts {
+  hour: number;
+  minute: number;
+}
+
+function parseDateOnlyIso(iso: string): DateParts | null {
   const match = /^([+-]?\d{4,6})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return null;
   return {
@@ -151,7 +162,7 @@ watch(
   { immediate: true },
 );
 
-function normalizeTimeText(text: string): { hour: number; minute: number } {
+function normalizeTimeText(text: string): TimeParts {
   const digits = text.replace(/\D/g, "").slice(0, 4);
   if (digits.length === 0) return { hour: 0, minute: 0 };
   let h = 0;
@@ -175,7 +186,8 @@ function formatTimeForDisplay(text: string): string {
 }
 
 function onTimeInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value;
+  if (!(e.target instanceof HTMLInputElement)) return;
+  const raw = e.target.value;
   const formatted = formatTimeForDisplay(raw);
   timeInputRaw.value = formatted;
 }

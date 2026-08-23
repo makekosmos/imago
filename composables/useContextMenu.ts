@@ -32,7 +32,7 @@ export function useContextMenu<T = unknown>(): ContextMenuState<T> {
   const isOpen = ref(false);
   const x = ref(0);
   const y = ref(0);
-  const payload = ref<T | null>(null) as Ref<T | null>;
+  const payload: Ref<T | null> = ref(null);
 
   function open(event: MouseEvent, p: T) {
     event.preventDefault();

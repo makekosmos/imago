@@ -178,7 +178,7 @@ function onRowClick(e: MouseEvent) {
     dragSuppressClick.value = false;
     return;
   }
-  if ((e.target as HTMLElement | null)?.closest("[data-stop-toggle]")) return;
+  if (e.target instanceof HTMLElement && e.target.closest("[data-stop-toggle]")) return;
   toggleExpand();
 }
 
@@ -195,7 +195,9 @@ function beginDrag(cx: number, cy: number) {
     return { id: el.dataset.todoId!, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 };
   });
 
-  clone = rowRef.value.cloneNode(true) as HTMLElement;
+  const copiedRow = rowRef.value.cloneNode(true);
+  if (!(copiedRow instanceof HTMLElement)) return;
+  clone = copiedRow;
   clone.dataset.dragClone = "";
   Object.assign(clone.style, {
     position: "fixed",
@@ -261,7 +263,7 @@ function positionGhost(target: TodoDropPayload) {
   const parent = targetEl.parentElement;
   if (!parent) return;
   if (ghost.parentElement === parent && ghost.nextSibling === refNode) return;
-  parent.insertBefore(ghost, refNode as Node | null);
+  parent.insertBefore(ghost, refNode);
 }
 
 function onDragMove(e: PointerEvent) {

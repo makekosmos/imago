@@ -15,8 +15,9 @@ const emit = defineEmits<{
 }>();
 
 function onInput(event: Event) {
-  const target = event.target as HTMLInputElement;
-  emit("update:modelValue", target.value);
+  if (event.target instanceof HTMLInputElement) {
+    emit("update:modelValue", event.target.value);
+  }
 }
 </script>
 

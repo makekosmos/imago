@@ -46,7 +46,7 @@ const MAX_STACK = 5;
  * (`<ToastHost />`) — отдельный визуальный renderer, делает inject и
  * рисует Teleport'ом в body. Сначала provide, потом mount host.
  */
-export function provideToastHost(): { items: Ref<ToastItem[]>; api: ToastApi } {
+export function provideToastHost() {
   const items = ref<ToastItem[]>([]);
   let nextId = 1;
   // Regression M5 (2026-05-24): update(id, { duration }) used to schedule a

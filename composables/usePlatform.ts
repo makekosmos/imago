@@ -13,15 +13,15 @@ import type { TitlebarPlatform } from "../components/types";
 
 function detectPlatform(): TitlebarPlatform {
   // 1) data-platform от preload (надёжнее всего в Electron).
-  if (typeof document !== "undefined") {
-    const marker = document.documentElement.dataset.platform;
+  if (globalThis.document) {
+    const marker = globalThis.document.documentElement.dataset.platform;
     if (marker === "mac" || marker === "windows" || marker === "linux") {
       return marker;
     }
   }
   // 2) Фолбэк на navigator (Storybook / браузер / до preload).
-  if (typeof navigator !== "undefined") {
-    const p = navigator.platform || "";
+  if (globalThis.navigator) {
+    const p = globalThis.navigator.platform || "";
     if (/Mac/i.test(p)) return "mac";
     if (/Linux/i.test(p)) return "linux";
   }

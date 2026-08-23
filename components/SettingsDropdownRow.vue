@@ -40,7 +40,7 @@ const emit = defineEmits<{
   "update:modelValue": [v: T];
 }>();
 
-const mutableOptions = computed(() => props.options.slice() as Option<T>[]);
+const mutableOptions = computed(() => props.options.slice());
 </script>
 
 <template>

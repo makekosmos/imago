@@ -64,7 +64,7 @@ const buttonRef = ref<HTMLButtonElement | null>(null);
 
 // На macOS модификаторы показываем нативными символами (⌘ ⌥ ⌃ ⇧), на остальных
 // платформах — текстом. Super/Meta = Command на macOS, Win на Windows.
-const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+const isMac = /Mac/i.test(navigator.platform);
 
 const keyParts = computed(() => {
   if (!props.modelValue) return [];

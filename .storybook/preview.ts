@@ -113,16 +113,14 @@ const preview: Preview = {
     (story, context) => {
       // Kepler CSS variables живут под селектором `.dark` — оборачиваем
       // story в div.dark. Light theme — TODO (см. globalTypes ниже).
-      const theme = (context.globals?.theme as string) ?? "dark";
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.toggle("dark", theme === "dark");
-        document.documentElement.classList.toggle("light", theme === "light");
-        document.body.classList.toggle("dark", theme === "dark");
-      }
+      const theme = String(context.globals?.theme ?? "dark");
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      document.documentElement.classList.toggle("light", theme === "light");
+      document.body.classList.toggle("dark", theme === "dark");
 
       // Padding только когда layout НЕ fullscreen — fullscreen stories
       // (DesktopChrome / overlays) занимают весь viewport сами.
-      const layout = (context.parameters?.layout as string) ?? "padded";
+      const layout = String(context.parameters?.layout ?? "padded");
       const isFullscreen = layout === "fullscreen";
 
       return () =>

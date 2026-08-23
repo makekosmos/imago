@@ -29,9 +29,7 @@ const emit = defineEmits<{
   delete: [];
 }>();
 
-const effectiveCount = computed(() =>
-  typeof props.count === "number" ? props.count : props.domains.length,
-);
+const effectiveCount = computed(() => props.count ?? props.domains.length);
 
 const subtitle = computed(() => {
   const n = effectiveCount.value;
