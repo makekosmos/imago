@@ -10,7 +10,8 @@ interface Props {
   title: string;
   description?: string;
   buttonLabel: string;
-  variant?: "primary" | "ghost" | "danger";
+  buttonTitle?: string;
+  variant?: "primary" | "ghost" | "surface" | "danger";
   size?: "md" | "sm";
   disabled?: boolean;
   loading?: boolean;
@@ -37,6 +38,8 @@ defineEmits<{ click: [e: MouseEvent] }>();
         :size="size"
         :disabled="disabled"
         :loading="loading"
+        :title="buttonTitle"
+        :aria-label="buttonTitle"
         @click="(e: MouseEvent) => $emit('click', e)"
       >
         {{ buttonLabel }}

@@ -58,7 +58,7 @@ function onBackdropPointerDown(e: PointerEvent) {
         @pointerdown="onBackdropPointerDown"
       >
         <div
-          class="kosmos-modal__panel flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--popover,var(--background))] text-[var(--popover-foreground,var(--foreground))] shadow-[var(--shadow-floating)] [corner-shape:var(--corner-shape)]"
+          class="kosmos-modal__panel flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border-2 border-[var(--border-color-high-emphasis)] bg-[color-mix(in_srgb,var(--foreground)_6%,var(--background))] text-[var(--popover-foreground,var(--foreground))] [corner-shape:var(--corner-shape)]"
           role="dialog"
           aria-modal="true"
           :aria-labelledby="props.title ? 'kosmos-modal-title' : undefined"

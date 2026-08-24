@@ -6,11 +6,13 @@ interface Props {
   tone?: StatusDotTone;
   label: string;
   sideOffset?: number;
+  showLabel?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   tone: "neutral",
   sideOffset: 8,
+  showLabel: false,
 });
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -71,7 +73,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="rootRef" class="relative inline-flex items-center justify-center">
+  <div ref="rootRef" class="relative inline-flex items-center justify-center" :class="showLabel ? 'gap-2' : ''">
     <button
       type="button"
       class="inline-flex size-8 items-center justify-center rounded-lg transition-[background-color,color] duration-150 ease-out [corner-shape:var(--corner-shape)] hover:bg-[color-mix(in_srgb,var(--sidebar-foreground)_8%,transparent)]"
@@ -83,6 +85,12 @@ onUnmounted(() => {
     >
       <span class="size-2 rounded-full bg-current" />
     </button>
+    <span
+      v-if="showLabel"
+      class="font-[var(--font-sans)] text-[length:var(--kosmos-text-body-size)] leading-[1.4] font-medium text-[var(--foreground)]"
+    >
+      {{ label }}
+    </span>
 
     <div
       v-if="open"

@@ -7,7 +7,7 @@
 withDefaults(
   defineProps<{
     /** Внешний вид. */
-    variant?: "primary" | "ghost" | "danger";
+    variant?: "primary" | "ghost" | "surface" | "danger";
     /** Размер: md (default, 40px h) или sm (28px h). */
     size?: "md" | "sm";
     /** Кнопка занимает всю ширину контейнера. */
@@ -43,6 +43,9 @@ withDefaults(
         : '',
       variant === 'ghost'
         ? 'border-[var(--border)] bg-[color-mix(in_srgb,var(--foreground)_4%,var(--background))] text-[var(--foreground)] hover:not-disabled:border-[color-mix(in_srgb,var(--accent)_45%,var(--border))] hover:not-disabled:bg-[color-mix(in_srgb,var(--foreground)_7%,var(--background))]'
+        : '',
+      variant === 'surface'
+      ? 'border-[var(--border-color-high-emphasis)] bg-[color-mix(in_srgb,var(--foreground)_18%,var(--background))] text-[var(--foreground)] disabled:opacity-100 hover:not-disabled:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))]'
         : '',
       variant === 'danger'
         ? 'border-[color-mix(in_srgb,var(--destructive)_35%,var(--border))] bg-transparent text-[var(--destructive)] hover:not-disabled:border-[var(--destructive)] hover:not-disabled:bg-[color-mix(in_srgb,var(--destructive)_10%,transparent)]'

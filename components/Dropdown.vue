@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
         <div
           v-if="open"
           ref="panelRef"
-          class="kosmos-dd__panel fixed z-[9500] flex min-w-[200px] flex-col overflow-hidden rounded-xl border border-[var(--border-color-strong,var(--border))] bg-[var(--settings-search-surface,var(--popover,var(--background)))] p-0 text-[var(--foreground)] [corner-shape:var(--corner-shape)]"
+          class="kosmos-dd__panel fixed z-[9500] flex min-w-[200px] flex-col overflow-hidden rounded-xl border border-[var(--border-color-low-emphasis,var(--border))] bg-[var(--settings-search-surface,var(--popover,var(--background)))] p-0 text-[var(--foreground)] [corner-shape:var(--corner-shape)]"
           role="listbox"
           :style="{
             top: panelPosition.top + 'px',

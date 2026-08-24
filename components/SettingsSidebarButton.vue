@@ -10,6 +10,8 @@ interface Props {
   iconVariant?: "tile" | "plain";
   iconFrom?: string;
   iconTo?: string;
+  iconWeight?: "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+  iconOnly?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -19,6 +21,8 @@ withDefaults(defineProps<Props>(), {
   iconVariant: "plain",
   iconFrom: "var(--settings-sidebar-icon-from)",
   iconTo: "var(--settings-sidebar-icon-to)",
+  iconWeight: "regular",
+  iconOnly: false,
 });
 
 defineEmits<{
@@ -31,6 +35,7 @@ defineEmits<{
   <button
     type="button"
     class="kosmos-settings-sidebar-button flex h-7 w-full cursor-default select-none items-center gap-2 rounded-[5px] border-0 bg-transparent px-2 py-0 text-left text-[color-mix(in_srgb,var(--foreground)_62%,transparent)] transition-[background-color,color] duration-[120ms] hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_82%,transparent)] data-[active=true]:bg-[var(--settings-sidebar-active)] data-[active=true]:text-[var(--foreground)]"
+    :class="iconOnly ? 'w-7 justify-center px-0' : ''"
     :data-active="active ? 'true' : undefined"
     :data-testid="testId"
     :aria-current="active ? 'page' : undefined"
@@ -55,9 +60,10 @@ defineEmits<{
       aria-hidden="true"
     >
       <img v-if="iconImage" class="block size-4 object-contain" :src="iconImage" alt="" />
-      <component v-else :is="icon" :size="16" :stroke-width="1.75" />
+      <component v-else :is="icon" :size="16" :weight="iconWeight" :stroke-width="1.75" />
     </span>
     <span
+      v-if="!iconOnly"
       class="kosmos-settings-sidebar-button__label min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-[var(--font-sans)] text-[13px] leading-[1.4] font-medium"
     >
       {{ label }}

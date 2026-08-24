@@ -81,7 +81,7 @@
   min-height: calc(
     env(titlebar-area-y, 0px) + env(titlebar-area-height, var(--kosmos-settings-titlebar-height))
   );
-  border-bottom: 1px solid var(--border-color-strong);
+  border-bottom: 1px solid var(--border-color-high-emphasis);
   background: var(--bg-app, #1d1d1f);
   padding-top: env(titlebar-area-y, 0px);
   padding-right: max(
@@ -293,7 +293,7 @@
   gap: 16px;
   padding: 14px 12px;
   background: var(--settings-list-background);
-  border-bottom: 1px solid var(--border-color-strong);
+  border-bottom: 1px solid var(--border-color-high-emphasis);
 }
 
 .settings-shell .rows > .row:first-child {

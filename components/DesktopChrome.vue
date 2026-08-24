@@ -28,49 +28,60 @@ provide("kosmosHasSidebar", hasSidebar);
 <template>
   <div
     v-if="props.appearance === 'settings'"
-    class="kosmos-desktop-chrome-settings flex h-full min-h-0 w-full overflow-hidden bg-transparent"
+    :class="[
+      'kosmos-desktop-chrome-settings grid h-full min-h-0 w-full grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-transparent',
+      hasSidebar ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]',
+    ]"
   >
-    <aside v-if="hasSidebar" class="relative z-10 flex h-full min-h-0 shrink-0 overflow-visible">
+    <header
+      :class="[
+        'kosmos-desktop-chrome-settings__header relative z-20 col-span-full row-start-1 flex items-center justify-between gap-4 [-webkit-app-region:drag]',
+        // Native window controls: на macOS traffic lights слева → отступ
+        // слева под них; на Windows min/max/close справа → отступ справа.
+        props.platform === 'mac'
+          ? 'pr-[10px] pl-[calc(10px+var(--kosmos-mac-traffic-light-left-safe-area,0px))]'
+          : 'pl-[max(10px,calc(env(titlebar-area-x,0px)+10px))] pr-[max(16px,calc(100vw-env(titlebar-area-x,0px)-env(titlebar-area-width,100vw)+16px))]',
+      ]"
+    >
+      <div
+        class="kosmos-desktop-chrome-settings__header-left inline-flex min-w-0 items-center gap-2"
+      >
+        <slot name="titlebar-leading" />
+      </div>
+
+      <div
+        class="kosmos-desktop-chrome-settings__header-center inline-flex min-w-0 flex-1 items-center justify-center gap-2"
+      >
+        <slot name="titlebar-center" />
+      </div>
+
+      <div
+        class="kosmos-desktop-chrome-settings__header-right inline-flex min-w-0 items-center justify-end gap-2"
+      >
+        <slot name="titlebar-trailing" />
+      </div>
+    </header>
+
+    <div
+      v-if="hasSidebar"
+      class="kosmos-desktop-chrome-settings__sidebar-titlebar-divider pointer-events-none z-30 col-start-1 row-start-1 h-full justify-self-end border-r border-[var(--border-color-low-emphasis)]"
+      aria-hidden="true"
+    />
+
+    <aside
+      v-if="hasSidebar"
+      class="relative z-10 col-start-1 row-start-2 flex min-h-0 shrink-0 overflow-visible"
+    >
       <slot name="sidebar" />
     </aside>
 
     <div
-      class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg-app,var(--background))]"
+      :class="[
+        'kosmos-desktop-chrome-settings__body relative z-[1] row-start-2 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[var(--bg-app,var(--background))]',
+        hasSidebar ? 'col-start-2' : 'col-start-1',
+      ]"
     >
-      <header
-        :class="[
-          'kosmos-desktop-chrome-settings__header flex items-center justify-between gap-4 [-webkit-app-region:drag]',
-          // Native window controls: на macOS traffic lights слева → отступ
-          // слева под них; на Windows min/max/close справа → отступ справа.
-          props.platform === 'mac'
-            ? 'pr-[10px] pl-[calc(10px+var(--kosmos-mac-traffic-light-left-safe-area,0px))]'
-            : 'pl-[max(10px,calc(env(titlebar-area-x,0px)+10px))] pr-[max(16px,calc(100vw-env(titlebar-area-x,0px)-env(titlebar-area-width,100vw)+16px))]',
-        ]"
-      >
-        <div
-          class="kosmos-desktop-chrome-settings__header-left inline-flex min-w-0 items-center gap-2"
-        >
-          <slot name="titlebar-leading" />
-        </div>
-
-        <div
-          class="kosmos-desktop-chrome-settings__header-center inline-flex min-w-0 flex-1 items-center justify-center gap-2"
-        >
-          <slot name="titlebar-center" />
-        </div>
-
-        <div
-          class="kosmos-desktop-chrome-settings__header-right inline-flex min-w-0 items-center justify-end gap-2"
-        >
-          <slot name="titlebar-trailing" />
-        </div>
-      </header>
-
-      <div
-        class="kosmos-desktop-chrome-settings__body flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-transparent"
-      >
-        <slot />
-      </div>
+      <slot />
     </div>
   </div>
 
@@ -113,7 +124,8 @@ provide("kosmosHasSidebar", hasSidebar);
   min-height: calc(
     env(titlebar-area-y, 0px) + env(titlebar-area-height, var(--kosmos-settings-titlebar-height))
   );
-  border-bottom: 1px solid var(--border-color-strong);
+  border-bottom: 1px solid var(--border-color-high-emphasis);
+  background: var(--kosmos-titlebar-background);
   padding-top: env(titlebar-area-y, 0px);
   padding-bottom: 0;
 }

@@ -12,17 +12,23 @@ interface Props {
   /** Когда true — строка визуально выглядит disabled (но control сам
    * управляет своим disabled-state). */
   muted?: boolean;
+  stacked?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
   muted: false,
+  stacked: false,
 });
 </script>
 
 <template>
   <div
-    class="flex items-start justify-between gap-4 border-b border-[var(--border-color-strong)] bg-transparent px-4 py-4 last:border-b-0"
+    class="flex items-start gap-4 border-b border-[var(--border-color-low-emphasis)] bg-transparent px-4 py-4 last:border-b-0"
+    :class="stacked ? 'flex-col' : ''"
   >
+    <div v-if="$slots['leading-icon']" class="shrink-0" aria-hidden="true">
+      <slot name="leading-icon" />
+    </div>
     <div class="flex min-w-0 flex-col gap-1" :class="{ 'opacity-60': muted }">
       <div
         class="font-[var(--font-sans)] text-[length:var(--kosmos-text-body-size)] leading-[1.4] font-medium text-[var(--foreground)]"
@@ -36,7 +42,7 @@ withDefaults(defineProps<Props>(), {
         {{ description }}
       </div>
     </div>
-    <div class="flex shrink-0 items-start gap-2">
+    <div class="flex shrink-0 items-start gap-2" :class="stacked ? 'w-full' : 'ml-auto'">
       <slot name="control">
         <slot />
       </slot>

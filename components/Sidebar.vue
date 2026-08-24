@@ -410,7 +410,7 @@ const wrapperClasses = computed(() =>
 <template>
   <aside
     v-if="props.mode === 'panel'"
-    class="kosmos-settings-sidebar box-border flex h-full w-[228px] min-w-[228px] flex-col gap-4 border-r border-[var(--border-color-strong)] bg-[var(--kosmos-settings-sidebar-bg)] text-white"
+    class="kosmos-settings-sidebar box-border flex h-full w-[228px] min-w-[228px] flex-col gap-4 border-r border-[var(--border-color-low-emphasis)] bg-[var(--kosmos-settings-sidebar-bg)] text-white"
     :data-tone="props.tone"
     :style="panelStyle"
   >
@@ -655,7 +655,7 @@ const wrapperClasses = computed(() =>
     env(titlebar-area-y, 0px) + env(titlebar-area-height, var(--kosmos-settings-titlebar-height))
   );
   gap: var(--kosmos-titlebar-control-gap);
-  border-bottom: 1px solid var(--border-color-strong);
+  border-bottom: 1px solid var(--border-color-high-emphasis);
   padding: env(titlebar-area-y, 0px) 10px 0;
 }
 
@@ -663,6 +663,12 @@ const wrapperClasses = computed(() =>
   height: 100%;
   align-items: center;
   gap: var(--kosmos-titlebar-control-gap);
+}
+
+.kosmos-settings-sidebar__content > :deep(.kosmos-scroll) {
+  scrollbar-gutter: stable both-edges;
+  padding-block: var(--space-1);
+  padding-inline: 0;
 }
 
 .kosmos-sidebar-shell::before {
@@ -707,7 +713,7 @@ const wrapperClasses = computed(() =>
     env(titlebar-area-y, 0px) + env(titlebar-area-height, var(--kosmos-settings-titlebar-height))
   );
   margin: -0.5rem -0.5rem 0.5rem;
-  border-bottom: 1px solid var(--border-color-strong);
+  border-bottom: 1px solid var(--border-color-high-emphasis);
   padding: env(titlebar-area-y, 0px) 10px 0;
 }
 
