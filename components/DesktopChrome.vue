@@ -35,7 +35,7 @@ provide("kosmosHasSidebar", hasSidebar);
   >
     <header
       :class="[
-        'kosmos-desktop-chrome-settings__header relative z-20 col-span-full row-start-1 flex items-center justify-between gap-4 [-webkit-app-region:drag]',
+        'kosmos-desktop-chrome-settings__header relative z-20 col-span-full row-start-1 grid grid-cols-subgrid [-webkit-app-region:drag]',
         // Native window controls: на macOS traffic lights слева → отступ
         // слева под них; на Windows min/max/close справа → отступ справа.
         props.platform === 'mac'
@@ -43,22 +43,19 @@ provide("kosmosHasSidebar", hasSidebar);
           : 'pl-[max(10px,calc(env(titlebar-area-x,0px)+10px))] pr-[max(16px,calc(100vw-env(titlebar-area-x,0px)-env(titlebar-area-width,100vw)+16px))]',
       ]"
     >
-      <div
-        class="kosmos-desktop-chrome-settings__header-left inline-flex min-w-0 items-center gap-2"
-      >
+      <div class="kosmos-desktop-chrome-settings__header-left col-start-1 inline-flex min-w-0 items-center gap-2">
         <slot name="titlebar-leading" />
       </div>
-
-      <div
-        class="kosmos-desktop-chrome-settings__header-center inline-flex min-w-0 flex-1 items-center justify-center gap-2"
-      >
-        <slot name="titlebar-center" />
-      </div>
-
-      <div
-        class="kosmos-desktop-chrome-settings__header-right inline-flex min-w-0 items-center justify-end gap-2"
-      >
-        <slot name="titlebar-trailing" />
+      <div class="kosmos-desktop-chrome-settings__header-content col-start-2 flex min-w-0 items-center gap-2">
+        <div class="kosmos-desktop-chrome-settings__header-content-leading inline-flex shrink-0 items-center gap-2">
+          <slot name="titlebar-content-leading" />
+        </div>
+        <div class="kosmos-desktop-chrome-settings__header-center inline-flex min-w-0 flex-1 items-center justify-center gap-2">
+          <slot name="titlebar-center" />
+        </div>
+        <div class="kosmos-desktop-chrome-settings__header-right inline-flex min-w-0 items-center justify-end gap-2">
+          <slot name="titlebar-trailing" />
+        </div>
       </div>
     </header>
 
@@ -131,11 +128,17 @@ provide("kosmosHasSidebar", hasSidebar);
 }
 
 .kosmos-desktop-chrome-settings__header-left,
+.kosmos-desktop-chrome-settings__header-content,
+.kosmos-desktop-chrome-settings__header-content-leading,
 .kosmos-desktop-chrome-settings__header-center,
 .kosmos-desktop-chrome-settings__header-right {
   height: 100%;
   align-items: center;
   gap: var(--kosmos-titlebar-control-gap);
+}
+
+.kosmos-desktop-chrome-settings__header-content {
+  padding-left: var(--space-2);
 }
 
 .kosmos-desktop-chrome-settings__header-left :deep(> div),

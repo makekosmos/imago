@@ -23,7 +23,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div
-    class="flex items-start gap-4 border-b border-[var(--border-color-low-emphasis)] bg-transparent px-4 py-4 last:border-b-0"
+    class="flex items-start gap-4 border-b border-[var(--border-color-low-emphasis)] bg-transparent px-4 pt-[18px] pb-[14px] last:border-b-0"
     :class="stacked ? 'flex-col' : ''"
   >
     <div v-if="$slots['leading-icon']" class="shrink-0" aria-hidden="true">
@@ -42,7 +42,11 @@ withDefaults(defineProps<Props>(), {
         {{ description }}
       </div>
     </div>
-    <div class="flex shrink-0 items-start gap-2" :class="stacked ? 'w-full' : 'ml-auto'">
+    <div
+      v-if="$slots.control || $slots.default"
+      class="flex shrink-0 items-start gap-2"
+      :class="stacked ? 'w-full' : 'ml-auto'"
+    >
       <slot name="control">
         <slot />
       </slot>
