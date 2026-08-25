@@ -27,7 +27,7 @@ const props = withDefaults(
     type: "text",
     disabled: false,
     readonly: false,
-    size: "md",
+    size: "sm",
     block: true,
     invalid: false,
   },
@@ -56,8 +56,8 @@ const value = computed({
     :autocomplete="autocomplete"
     :inputmode="inputmode"
     :class="[
-      'rounded-lg border-2 border-solid border-[var(--border)] bg-[color-mix(in_srgb,var(--foreground)_4%,var(--background))] px-4 font-[inherit] text-sm leading-[1.4] text-[var(--foreground)] transition-[border-color,background-color] duration-140 ease-[cubic-bezier(0.2,0,0,1)] [corner-shape:var(--corner-shape)] placeholder:text-[color-mix(in_srgb,var(--foreground)_45%,transparent)] hover:not-disabled:not-focus:border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] focus:border-[color-mix(in_srgb,var(--accent)_65%,transparent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-55',
-      size === 'sm' ? 'h-8 px-2 text-[0.8125rem]' : 'h-10',
+      'rounded-lg border-2 border-solid border-[var(--border-color-high-emphasis)] bg-[color-mix(in_srgb,var(--foreground)_18%,var(--background))] font-[inherit] leading-[1.4] text-[var(--foreground)] transition-[border-color,background-color] duration-140 ease-[cubic-bezier(0.2,0,0,1)] [corner-shape:var(--corner-shape)] placeholder:text-[color-mix(in_srgb,var(--foreground)_45%,transparent)] hover:not-disabled:not-focus:bg-[color-mix(in_srgb,var(--foreground)_22%,var(--background))] focus:border-[color-mix(in_srgb,var(--accent)_65%,transparent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-55',
+      size === 'sm' ? 'kosmos-text-input--sm h-7 px-2.5' : 'h-10 px-4 text-sm',
       block ? 'w-full' : '',
       invalid ? 'border-[var(--destructive)] focus:border-[var(--destructive)]' : '',
     ]"
@@ -66,3 +66,9 @@ const value = computed({
     @keydown="(e) => emit('keydown', e)"
   />
 </template>
+
+<style scoped>
+.kosmos-text-input--sm {
+  font-size: var(--kosmos-text-caption-size);
+}
+</style>
