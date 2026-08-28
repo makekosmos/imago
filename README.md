@@ -1,17 +1,17 @@
-# `@makekosmos/visuals`
+# @makekosmos/visuals
 
-Shared Vue 3 components, composables, patterns, and theme tokens for Kosmos
-applications.
+Shared Vue 3 components, composables, patterns, and theme tokens for Kosmos applications.
 
-## Development
+## Verification
 
-```bash
-bun install
-bun run build
-bun run test
-```
+    bun install --frozen-lockfile
+    bunx playwright install chromium
+    bun run check
 
-The package is published independently to GitHub Packages. Applications keep
-the historical `@kosmos/visuals` import path through an npm alias, but pin an
-explicit released `@makekosmos/visuals` version instead of importing files from
-the Kosmos monorepo.
+The aggregate check is the CI contract: lint, formatting, exported TypeScript/API
+checks, browser/unit tests, library and Storybook builds, and packed-export smoke
+checks. The smoke check validates every declared JS/TS/CSS subpath and generated
+dist entry points before publishing.
+
+Use pinned Bun 1.3.14. Breaking public component/type changes require a release
+note and an explicit version decision.
