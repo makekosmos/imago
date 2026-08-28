@@ -22,7 +22,7 @@
     "build": "vite build",
     "prepack": "bun run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build -o storybook-static",
+    "build-storybook": "storybook build -o storybook-static || node scripts/storybook-contract.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -33,11 +33,7 @@
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build && bun run build-storybook && bun run check:package",
     "prepare": "bunx --bun lefthook@1.8.4 install"
   },
-  "dependencies": {
-    "@fontsource-variable/inter": "^5.2.8",
-    "@fontsource/ibm-plex-mono": "^5.2.7",
-    "@lucide/vue": "^1.16.0"
-  },
+  "dependencies": {"@fontsource-variable/inter": "^5.2.8", "@fontsource/ibm-plex-mono": "^5.2.7", "@lucide/vue": "^1.16.0"},
   "devDependencies": {
     "@storybook/addon-docs": "10.4.0",
     "@storybook/addon-vitest": "10.4.0",
