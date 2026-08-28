@@ -2,30 +2,14 @@
   "name": "@makekosmos/visuals",
   "version": "0.1.3",
   "private": false,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/makekosmos/imago.git"
-  },
-  "files": [
-    "dist",
-    "components",
-    "composables",
-    "patterns",
-    "runtime",
-    "theme",
-    "index.ts",
-    "README.md",
-    "STORYBOOK.md"
-  ],
+  "repository": {"type": "git", "url": "git+https://github.com/makekosmos/imago.git"},
+  "files": ["dist","components","composables","patterns","runtime","theme","index.ts","README.md","STORYBOOK.md"],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./index.ts",
   "exports": {
-    ".": {
-      "types": "./index.ts",
-      "import": "./dist/index.js"
-    },
+    ".": {"types": "./index.ts", "import": "./dist/index.js"},
     "./components": "./components/index.ts",
     "./patterns": "./patterns/index.ts",
     "./theme/css": "./theme/css-variables.css",
@@ -33,9 +17,7 @@
     "./components/sidebar.css": "./components/sidebar.css",
     "./components/settings-shell.css": "./components/settings-shell.css"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "publishConfig": {"registry": "https://npm.pkg.github.com"},
   "scripts": {
     "build": "vite build",
     "prepack": "bun run build",
@@ -44,7 +26,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check": "bun run build && bun run test"
+    "typecheck": "node scripts/quality-check.mjs --types",
+    "lint": "node scripts/quality-check.mjs --lint",
+    "format:check": "node scripts/quality-check.mjs --format",
+    "check:package": "node scripts/package-smoke.mjs",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build && bun run build-storybook && bun run check:package",
+    "prepare": "bunx --bun lefthook@1.8.4 install"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
@@ -66,10 +53,6 @@
     "vue": "^3.6.0-beta.12",
     "vue-router": "^5.0.7"
   },
-  "peerDependencies": {
-    "@lucide/vue": "*",
-    "vue": "^3.0.0",
-    "vue-router": "^4.5.0 || ^5.0.0"
-  },
+  "peerDependencies": {"@lucide/vue": "*", "vue": "^3.0.0", "vue-router": "^4.5.0 || ^5.0.0"},
   "packageManager": "bun@1.3.14"
 }
