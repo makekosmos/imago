@@ -31,7 +31,7 @@
     "format:check": "node scripts/quality-check.mjs --format",
     "check:package": "node scripts/package-smoke.mjs",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build && bun run build-storybook && bun run check:package",
-    "prepare": "bunx --bun lefthook@1.8.4 install"
+    "prepare": "lefthook install"
   },
   "dependencies": {"@fontsource-variable/inter": "^5.2.8", "@fontsource/ibm-plex-mono": "^5.2.7", "@lucide/vue": "^1.16.0"},
   "devDependencies": {
@@ -42,6 +42,7 @@
     "@vitejs/plugin-vue": "6.0.7",
     "@vitest/browser-playwright": "^4.1.6",
     "@vitest/coverage-v8": "^4.1.6",
+    "lefthook": "1.8.4",
     "storybook": "10.4.0",
     "tailwindcss": "4.2.2",
     "vite": "8.0.13",
