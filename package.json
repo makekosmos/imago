@@ -30,6 +30,7 @@
     "lint": "node scripts/quality-check.mjs --lint",
     "format:check": "node scripts/quality-check.mjs --format",
     "check:package": "node scripts/package-smoke.mjs",
+    "check:quick": "bun run lint && bun run format:check && bun run typecheck",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build && bun run build-storybook && bun run check:package",
     "prepare": "lefthook install"
   },
