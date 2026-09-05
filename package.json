@@ -22,7 +22,7 @@
     "build": "vite build",
     "prepack": "bun run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build -o storybook-static || node scripts/storybook-contract.mjs",
+    "build-storybook": "storybook build -o storybook-static",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

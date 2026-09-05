@@ -23,10 +23,14 @@ const config: StorybookConfig = {
   // дефолт. Inline noExternal для пакетов которые vite-node не может
   // resolve при bun-isolated node_modules.
   async viteFinal(config) {
-    // Storybook v10 upgrade удалил vue plugin из default config —
-    // добавляем явно. Без него .vue файлы выдают "Failed to parse source"
-    // в vite:import-analysis.
-    config.plugins = [...(config.plugins ?? []), vue(), tailwindcss()];
+    const hasVuePlugin = (config.plugins ?? []).some(
+      (plugin) =>
+        typeof plugin === "object" &&
+        plugin !== null &&
+        "name" in plugin &&
+        plugin.name === "vite:vue",
+    );
+    config.plugins = [...(config.plugins ?? []), ...(hasVuePlugin ? [] : [vue()]), tailwindcss()];
 
     config.optimizeDeps = config.optimizeDeps ?? {};
     config.optimizeDeps.include = [
