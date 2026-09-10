@@ -32,7 +32,9 @@
     "check:package": "node scripts/package-smoke.mjs",
     "check:quick": "bun run lint && bun run format:check && bun run typecheck",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run build && bun run build-storybook && bun run check:package",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "preview:vue": "vite --config apps/preview-vue/vite.config.ts",
+    "preview:react": "vite --config apps/preview-react/vite.config.ts"
   },
   "dependencies": {"@fontsource-variable/inter": "^5.2.8", "@fontsource/ibm-plex-mono": "^5.2.7", "@lucide/vue": "^1.16.0"},
   "devDependencies": {
@@ -49,7 +51,11 @@
     "vite": "8.0.13",
     "vitest": "^4.1.6",
     "vue": "^3.6.0-beta.12",
-    "vue-router": "^5.0.7"
+    "vue-router": "^5.0.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3"
   },
   "peerDependencies": {"@lucide/vue": "*", "vue": "^3.0.0", "vue-router": "^4.5.0 || ^5.0.0"},
   "packageManager": "bun@1.3.14"
