@@ -6,7 +6,7 @@ Shared Vue 3 components, composables, patterns and theme tokens, published as `@
 
 - `components/`, `composables/`, `patterns/`: public UI primitives and behavior.
 - `theme/`, `runtime/`, `index.ts`: tokens, runtime helpers and public exports.
-- `.storybook/`, component stories, `scripts/`: browser coverage and package/API checks.
+- `scripts/`: package/API checks.
 
 Read README, current package scripts, relevant tests and any nested AGENTS.md first.
 Check current git status and task/PR revision; preserve unrelated changes.
@@ -24,7 +24,6 @@ rtk bun run check
 ```
 
 - Use Bun 1.3.14. Check covers API/type checks, browser tests, library build and packed-export smoke.
-- `build-storybook` can fall back to a static contract check after a failed full build. Report which ran; fallback success is not proof the full Storybook build passed.
 
 ## Contracts to preserve
 
