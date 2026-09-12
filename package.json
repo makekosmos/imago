@@ -19,11 +19,11 @@
   },
   "publishConfig": {"registry": "https://npm.pkg.github.com"},
   "scripts": {
-    "build": "vite build",
+    "build": "node scripts/prepack-artifact.mjs --build",
     "prepack": "node scripts/prepack-artifact.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static",
-    "test": "vitest run",
+    "test": "node tests/prepack-artifact.test.mjs && vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "node scripts/quality-check.mjs --types",
