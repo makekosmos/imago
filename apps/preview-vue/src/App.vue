@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button, SidebarButton } from "../../../packages/vue/src";
 import { ref } from "vue";
 
 const modalOpen = ref(false);
@@ -12,10 +13,17 @@ const modalOpen = ref(false);
       <h2>Buttons</h2>
       <div class="rule" />
       <div class="row">
-        <button class="primary">Primary</button>
-        <button>Ghost</button>
-        <button class="danger">Danger</button>
+        <Button>Primary</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button variant="danger">Danger</Button>
       </div>
+    </section>
+
+    <section class="sidebar-preview">
+      <h2>Sidebar buttons</h2>
+      <div class="rule" />
+      <SidebarButton label="Inbox" active />
+      <SidebarButton label="Today" />
     </section>
 
     <section>

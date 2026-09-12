@@ -2548,6 +2548,24 @@
   -webkit-app-region: no-drag;
 }
 
+/* Motion timing adapted from Fluid Functionalism (MIT): github.com/mickadesign/fluid-functionalism */
+@media (prefers-reduced-motion: no-preference) {
+  button.button:not(:disabled),
+  .sidebar-button__emit {
+    transition:
+      background-color 80ms ease,
+      border-color 80ms ease,
+      color 80ms ease,
+      transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  button.button:active:not(:disabled),
+  .sidebar-button__emit:active {
+    transform: translateY(1px);
+    transition-duration: 80ms;
+  }
+}
+
 /* packages/vue/src/components/Skeleton.vue */
 .kosmos-skeleton {
   animation: kosmos-skeleton-pulse 1.45s ease-in-out infinite;
