@@ -1,6 +1,6 @@
 node_modules/
 dist/
-storybook-static/
+.tmp/
 
 # Local tooling and generated test output
 .worktrees/

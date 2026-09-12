@@ -4,9 +4,8 @@ Shared Vue 3 components, composables, patterns, and theme tokens for Kosmos appl
 
 ## Verification
 
-    bun install --frozen-lockfile
-    bunx playwright install chromium
-    bun run check
+    pnpm install --frozen-lockfile
+    pnpm check
 
 The aggregate check is the CI contract: lint, formatting, exported TypeScript/API
 checks, library build, and packed-export smoke checks. The smoke check validates
@@ -16,8 +15,8 @@ The check's library build creates a verified prepared-artifact marker. Publishin
 must consume that exact artifact with `IMAGO_PREPARED_ARTIFACT=required`; a
 standalone `npm pack` without that variable rebuilds safely during `prepack`.
 
-    bun run check
+    pnpm check
     IMAGO_PREPARED_ARTIFACT=required npm pack --dry-run
 
-Use pinned Bun 1.3.14. Breaking public component/type changes require a release
+Use pinned pnpm 12.4.1. Breaking public component/type changes require a release
 note and an explicit version decision.

@@ -2,14 +2,28 @@
   "name": "@makekosmos/visuals",
   "version": "0.1.4",
   "private": false,
-  "repository": {"type": "git", "url": "git+https://github.com/makekosmos/imago.git"},
-  "files": ["dist","packages","patterns","runtime","theme","index.ts","README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/makekosmos/imago.git"
+  },
+  "files": [
+    "dist",
+    "packages",
+    "patterns",
+    "runtime",
+    "theme",
+    "index.ts",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./index.ts",
   "exports": {
-    ".": {"types": "./index.ts", "import": "./dist/index.js"},
+    ".": {
+      "types": "./index.ts",
+      "import": "./dist/index.js"
+    },
     "./components": "./packages/vue/src/components/index.ts",
     "./patterns": "./patterns/index.ts",
     "./theme/css": "./theme/css-variables.css",
@@ -17,12 +31,14 @@
     "./components/sidebar.css": "./packages/vue/src/components/sidebar.css",
     "./components/settings-shell.css": "./packages/vue/src/components/settings-shell.css"
   },
-  "publishConfig": {"registry": "https://npm.pkg.github.com"},
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "node scripts/prepack-artifact.mjs --build",
     "prepack": "node scripts/prepack-artifact.mjs",
     "test": "node tests/prepack-artifact.test.mjs",
-    "typecheck": "node scripts/quality-check.mjs --types",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "node scripts/quality-check.mjs --lint",
     "format:check": "node scripts/quality-check.mjs --format",
     "check:package": "node scripts/package-smoke.mjs",
@@ -35,18 +51,28 @@
     "preview:vue": "vite --config apps/preview-vue/vite.config.ts",
     "preview:react": "vite --config apps/preview-react/vite.config.ts"
   },
-  "dependencies": {"@fontsource-variable/inter": "^5.2.8", "@fontsource/ibm-plex-mono": "^5.2.7", "@lucide/vue": "^1.16.0"},
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@lucide/vue": "^1.16.0"
+  },
   "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.1.1",
     "@vitejs/plugin-vue": "6.0.7",
     "lefthook": "1.8.4",
-    "vite": "8.0.13",
-    "vue": "^3.6.0-beta.12",
-    "vue-router": "^5.0.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.3"
+    "typescript": "5.9.3",
+    "vite": "8.0.16",
+    "vue": "^3.6.0-beta.12",
+    "vue-router": "^5.0.7"
   },
-  "peerDependencies": {"@lucide/vue": "*", "vue": "^3.0.0", "vue-router": "^4.5.0 || ^5.0.0"},
+  "peerDependencies": {
+    "@lucide/vue": "*",
+    "vue": "^3.0.0",
+    "vue-router": "^4.5.0 || ^5.0.0"
+  },
   "packageManager": "pnpm@12.4.1"
 }
