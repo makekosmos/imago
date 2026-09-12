@@ -20,7 +20,7 @@
   "publishConfig": {"registry": "https://npm.pkg.github.com"},
   "scripts": {
     "build": "vite build",
-    "prepack": "bun run build",
+    "prepack": "node scripts/prepack-artifact.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static",
     "test": "vitest run",
