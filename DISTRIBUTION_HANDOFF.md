@@ -14,7 +14,7 @@
 ## Compatibility evidence
 
 - `bun install --frozen-lockfile`: PASS.
-- Full `bun run check`: PASS — lint, formatting, type checks, Vite build and package smoke.
+- Full `pnpm check`: PASS — lint, formatting, type checks, prepared-artifact contract, Vite build and package smoke.
 - `bunx lefthook run pre-push`: PASS.
 - Packed artifact contains `dist/index.js` and `dist/index.css`; all 7 declared exports are present.
 - Registry verification: `@makekosmos/visuals@0.1.3` fetched from GitHub Packages, installed in a clean consumer, and imported successfully.
