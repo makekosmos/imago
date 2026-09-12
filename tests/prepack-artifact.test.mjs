@@ -15,7 +15,7 @@ function fixture() {
   }
   writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", type: "module" }));
   for (const [name, packageJson] of [
-    ["vite", { name: "vite", version: "1", dependencies: { rolldown: "1" }, optionalDependencies: { "missing-native": "1" } }],
+    ["vite", { name: "vite", version: "1", dependencies: { rolldown: "1", "missing-native": "1" }, optionalDependencies: { "missing-native": "1" } }],
     ["@vitejs/plugin-vue", { name: "@vitejs/plugin-vue", version: "1", dependencies: { "@rolldown/pluginutils": "1" } }],
     ["@vue/compiler-sfc", { name: "@vue/compiler-sfc", version: "1", dependencies: { "@vue/compiler-core": "1" } }],
     ["rolldown", { name: "rolldown", version: "1" }],

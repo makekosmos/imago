@@ -131,12 +131,15 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
         manifest: path.relative(root, manifest).replaceAll("\\", "/"),
       });
       for (const file of walk(root, packageRoot, [], true, true)) files.add(file);
-      for (const dependency of Object.keys(packageJson.dependencies ?? {}).sort()) {
+      const optionalDependencies = packageJson.optionalDependencies ?? {};
+      for (const dependency of Object.keys(packageJson.dependencies ?? {})
+        .filter((name) => !Object.hasOwn(optionalDependencies, name))
+        .sort()) {
         if (!allowedDependencies.includes(dependency)) {
           queue.push({ name: dependency, fromManifest: manifest, optional: false });
         }
       }
-      for (const dependency of Object.keys(packageJson.optionalDependencies ?? {}).sort()) {
+      for (const dependency of Object.keys(optionalDependencies).sort()) {
         if (!allowedDependencies.includes(dependency)) {
           queue.push({ name: dependency, fromManifest: manifest, optional: true });
         }
