@@ -99,13 +99,25 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
   }
 
   function buildDependencyClosure() {
-    const queue = buildDependencyRoots.map((name) => ({ name, fromManifest: path.join(root, "package.json") }));
+    const queue = buildDependencyRoots.map((name) => ({
+      name,
+      fromManifest: path.join(root, "package.json"),
+      optional: false,
+    }));
     const packages = new Map();
     const files = new Set();
+    const missingOptional = new Set();
     while (queue.length > 0) {
-      const { name, fromManifest } = queue.shift();
+      const { name, fromManifest, optional } = queue.shift();
       if (allowedDependencies.includes(name)) continue;
-      const manifest = resolvePackageManifest(name, fromManifest);
+      let manifest;
+      try {
+        manifest = resolvePackageManifest(name, fromManifest);
+      } catch (error) {
+        if (!optional) throw error;
+        missingOptional.add(`${path.relative(root, fromManifest).replaceAll("\\", "/")}:${name}`);
+        continue;
+      }
       const key = path.resolve(manifest);
       if (packages.has(key)) continue;
       const packageRoot = path.dirname(manifest);
@@ -119,12 +131,14 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
         manifest: path.relative(root, manifest).replaceAll("\\", "/"),
       });
       for (const file of walk(root, packageRoot, [], true, true)) files.add(file);
-      for (const dependency of Object.keys({
-        ...packageJson.dependencies,
-        ...packageJson.optionalDependencies,
-      }).sort()) {
+      for (const dependency of Object.keys(packageJson.dependencies ?? {}).sort()) {
         if (!allowedDependencies.includes(dependency)) {
-          queue.push({ name: dependency, fromManifest: manifest });
+          queue.push({ name: dependency, fromManifest: manifest, optional: false });
+        }
+      }
+      for (const dependency of Object.keys(packageJson.optionalDependencies ?? {}).sort()) {
+        if (!allowedDependencies.includes(dependency)) {
+          queue.push({ name: dependency, fromManifest: manifest, optional: true });
         }
       }
     }
@@ -138,10 +152,15 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
       left.manifest.localeCompare(right.manifest),
     );
     const resolvedFiles = [...files].sort();
+    const unresolvedOptional = [...missingOptional].sort();
     return {
       packages: resolvedPackages,
       files: resolvedFiles,
-      sha256: digestFiles(resolvedFiles, JSON.stringify(resolvedPackages)),
+      missing_optional: unresolvedOptional,
+      sha256: digestFiles(
+        resolvedFiles,
+        JSON.stringify({ packages: resolvedPackages, missing_optional: unresolvedOptional }),
+      ),
     };
   }
 
