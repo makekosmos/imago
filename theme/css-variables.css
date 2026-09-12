@@ -1,5 +1,5 @@
 /* Загрузка шрифтов через @fontsource — ОДИН раз для всех consumers
-   visuals (shell, extensions, storybook). Vite резолвит bare-specifier
+   visuals (shell, extensions). Vite резолвит bare-specifier
    @import через CSS pipeline. Без этих @import'ов на Windows
    fallback'ил на Segoe UI / Consolas — не Kepler design intent. */
 @import "@fontsource-variable/inter";

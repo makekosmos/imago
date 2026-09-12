@@ -4,6 +4,7 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  realpathSync,
   readFileSync,
   readdirSync,
   rmSync,
@@ -16,17 +17,16 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoots = [
   "index.ts",
-  "components",
-  "composables",
+  "packages",
   "patterns",
   "runtime",
   "theme",
   "vite.config.mjs",
   "scripts/prepack-artifact.mjs",
 ];
-const dependencyFiles = ["package.json", "bun.lock"];
+const dependencyFiles = ["package.json", "pnpm-lock.yaml"];
 const allowedDependencies = ["vue", "vue-router", "@lucide/vue"];
-const buildDependencyRoots = ["vite", "@vitejs/plugin-vue", "@vue/compiler-sfc"];
+const buildDependencyRoots = ["vite", "@vitejs/plugin-vue"];
 
 function walk(root, directory, files = [], rejectSymlinks = false, skipNestedNodeModules = false) {
   for (const entry of readdirSync(directory, { withFileTypes: true }).sort((a, b) =>
@@ -47,25 +47,23 @@ function walk(root, directory, files = [], rejectSymlinks = false, skipNestedNod
 }
 
 function defaultBuild(root, mode) {
-  execFileSync("bun", ["x", "vite", "build", "--mode", mode], {
+  execFileSync(process.execPath, [path.join(root, "node_modules", "vite", "bin", "vite.js"), "build", "--mode", mode], {
     cwd: root,
     stdio: "inherit",
     env: process.env,
   });
 }
 
-function resolveBunVersion() {
-  if (process.versions.bun) return process.versions.bun;
-  return execFileSync("bun", ["--version"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-  }).trim();
+function resolvePnpmVersion() {
+  const packageManager = JSON.parse(readFileSync(path.join(repositoryRoot, "package.json"), "utf8"))
+    .packageManager;
+  return packageManager?.startsWith("pnpm@") ? packageManager.slice("pnpm@".length) : null;
 }
 
 export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild = defaultBuild) {
   const root = path.resolve(workspaceRoot);
   const statePath = path.join(root, ".tmp", "imago-prepared-artifact.json");
-  const buildBunVersion = runBuild === defaultBuild ? resolveBunVersion() : process.versions.bun ?? null;
+  const buildPnpmVersion = runBuild === defaultBuild ? resolvePnpmVersion() : null;
 
   function digestFiles(files, prefix = "") {
     const hash = createHash("sha256");
@@ -118,17 +116,18 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
         missingOptional.add(`${path.relative(root, fromManifest).replaceAll("\\", "/")}:${name}`);
         continue;
       }
-      const key = path.resolve(manifest);
-      if (packages.has(key)) continue;
-      const packageRoot = path.dirname(manifest);
-      if (lstatSync(packageRoot).isSymbolicLink()) {
-        throw new Error(`build dependency cannot be a symlink: ${packageRoot}`);
+      const packageRoot = realpathSync(path.dirname(manifest));
+      if (!isWithinRoot(packageRoot)) {
+        throw new Error(`build dependency resolves outside workspace: ${manifest}`);
       }
-      const packageJson = JSON.parse(readFileSync(manifest, "utf8"));
+      const canonicalManifest = path.join(packageRoot, "package.json");
+      const key = path.resolve(canonicalManifest);
+      if (packages.has(key)) continue;
+      const packageJson = JSON.parse(readFileSync(canonicalManifest, "utf8"));
       packages.set(key, {
         name: packageJson.name ?? name,
         version: packageJson.version ?? null,
-        manifest: path.relative(root, manifest).replaceAll("\\", "/"),
+        manifest: path.relative(root, canonicalManifest).replaceAll("\\", "/"),
       });
       for (const file of walk(root, packageRoot, [], true, true)) files.add(file);
       const optionalDependencies = packageJson.optionalDependencies ?? {};
@@ -136,12 +135,12 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
         .filter((name) => !Object.hasOwn(optionalDependencies, name))
         .sort()) {
         if (!allowedDependencies.includes(dependency)) {
-          queue.push({ name: dependency, fromManifest: manifest, optional: false });
+          queue.push({ name: dependency, fromManifest: canonicalManifest, optional: false });
         }
       }
       for (const dependency of Object.keys(optionalDependencies).sort()) {
         if (!allowedDependencies.includes(dependency)) {
-          queue.push({ name: dependency, fromManifest: manifest, optional: true });
+          queue.push({ name: dependency, fromManifest: canonicalManifest, optional: true });
         }
       }
     }
@@ -206,7 +205,7 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
       platform: process.platform,
       arch: process.arch,
       node: process.version,
-      bun: buildBunVersion,
+      pnpm: buildPnpmVersion,
       environment_sha256: createHash("sha256").update(JSON.stringify(environment)).digest("hex"),
     };
   }

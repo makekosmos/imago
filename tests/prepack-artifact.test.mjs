@@ -6,11 +6,11 @@ import { createArtifactContract } from "../scripts/prepack-artifact.mjs";
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "imago-artifact-"));
-  for (const directory of ["components", "composables", "patterns", "runtime", "theme", "scripts"]) {
+  for (const directory of ["packages", "patterns", "runtime", "theme", "scripts"]) {
     mkdirSync(join(root, directory), { recursive: true });
     writeFileSync(join(root, directory, "index.ts"), `${directory}\n`);
   }
-  for (const file of ["index.ts", "vite.config.mjs", "bun.lock", "scripts/prepack-artifact.mjs"]) {
+  for (const file of ["index.ts", "vite.config.mjs", "pnpm-lock.yaml", "scripts/prepack-artifact.mjs"]) {
     writeFileSync(join(root, file), file);
   }
   writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", type: "module" }));
@@ -36,7 +36,7 @@ function fixture() {
 function buildStub(calls, mutate) {
   return (root) => {
     calls.push(root);
-    if (mutate) writeFileSync(join(root, "components", "index.ts"), "changed during build");
+    if (mutate) writeFileSync(join(root, "packages", "index.ts"), "changed during build");
     mkdirSync(join(root, "dist"), { recursive: true });
     writeFileSync(join(root, "dist", "index.js"), "artifact");
   };
@@ -60,11 +60,11 @@ run("prepared mode rejects stale inputs and tampered outputs", () => {
     contract.build();
     assert.equal(calls.length, 1);
 
-    writeFileSync(join(root, "components", "index.ts"), "changed");
+    writeFileSync(join(root, "packages", "index.ts"), "changed");
     assert.throws(() => contract.prepack(true), /required prepared Imago artifact/);
     assert.equal(calls.length, 1);
 
-    writeFileSync(join(root, "components", "index.ts"), "components\n");
+    writeFileSync(join(root, "packages", "index.ts"), "packages\n");
     contract.build();
     writeFileSync(join(root, "node_modules", "rolldown", "index.js"), "dependency changed");
     assert.throws(() => contract.prepack(true), /required prepared Imago artifact/);

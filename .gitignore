@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.tmp/
+
+# Local tooling and generated test output
+.worktrees/
+.vite/
+coverage/
+test-results/
+playwright-report/
+vitest-attachments/
+*.tsbuildinfo
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

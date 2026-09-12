@@ -11,14 +11,14 @@
 - Integrity: `sha512-TKTd+J5Jd2m1sEVvNRSAe4qddqBKVI+gfph8zB2OjAh75IuXE5JITNmnK8DCPkG/Biv1LibPAyygqOtbFq/uIA==`
 - Shasum: `7b69ce0b5a22f4383206ecd44ed3acf53e014c7a`
 
-## Compatibility evidence
+## Compatibility evidence for the current development revision
 
-- `bun install --frozen-lockfile`: PASS.
-- Full `bun run check`: PASS — 27 test files, 86 tests, Vite build, Storybook build, 27-story contract and package smoke.
-- `bunx lefthook run pre-push`: PASS.
+- `pnpm install --frozen-lockfile`: PASS.
+- Full `pnpm check`: PASS — lint, formatting, type checks, prepared-artifact contract, library and preview builds, and package smoke.
+- `pnpm exec lefthook run pre-push`: PASS.
 - Packed artifact contains `dist/index.js` and `dist/index.css`; all 7 declared exports are present.
 - Registry verification: `@makekosmos/visuals@0.1.3` fetched from GitHub Packages, installed in a clean consumer, and imported successfully.
-- Public API, package version, peer dependencies and lockfile unchanged; no application dependencies changed.
+- The package layout and package manager changed on the unreleased `0.1.4` development line; the published `0.1.3` evidence above remains historical.
 
 ## Consumer contract
 
