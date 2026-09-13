@@ -489,7 +489,7 @@ const wrapperClasses = computed(() =>
             'kosmos-sidebar-hover-highlight',
             { 'is-visible': hoverHighlightVisible, 'is-moving': hoverHighlightMoving },
           ]"
-          :style="hoverHighlightStyle"
+          :style="[{ pointerEvents: 'none' }, hoverHighlightStyle]"
         />
         <div
           v-if="hasTopBar"
