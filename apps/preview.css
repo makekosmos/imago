@@ -36,6 +36,9 @@ input, select { width: 100%; }
   --sidebar-foreground: #e8e8ea;
   width: 220px;
 }
+.sidebar-preview .kosmos-sidebar-wrapper {
+  height: 112px;
+}
 .backdrop {
   position: fixed;
   inset: 0;

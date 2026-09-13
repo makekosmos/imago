@@ -139,6 +139,10 @@ const isResizing = shallowRef(false);
 const animating = shallowRef(false);
 const lineExpanded = shallowRef(false);
 const collapsedGroups = shallowRef<Record<string, boolean>>({});
+const sidebarShell = shallowRef<HTMLElement | null>(null);
+const hoverHighlightVisible = shallowRef(false);
+const hoverHighlightMoving = shallowRef(false);
+const hoverHighlightStyle = shallowRef<Record<string, string>>({});
 
 let mouseDownX = 0;
 let mouseDownY = 0;
@@ -364,6 +368,32 @@ function toggleGroup(groupId: string) {
   };
 }
 
+function showHoverHighlight(event: PointerEvent | FocusEvent) {
+  const target = event.target instanceof Element
+    ? event.target.closest<HTMLElement>(".sidebar-button__emit, .sidebar__project-link-base")
+    : null;
+  if (!target) {
+    hideHoverHighlight();
+    return;
+  }
+  if (!sidebarShell.value) return;
+
+  const shellRect = sidebarShell.value.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  hoverHighlightMoving.value = hoverHighlightVisible.value;
+  hoverHighlightStyle.value = {
+    width: `${targetRect.width}px`,
+    height: `${targetRect.height}px`,
+    transform: `translate3d(${targetRect.left - shellRect.left}px, ${targetRect.top - shellRect.top}px, 0)`,
+  };
+  hoverHighlightVisible.value = true;
+}
+
+function hideHoverHighlight() {
+  hoverHighlightVisible.value = false;
+  hoverHighlightMoving.value = false;
+}
+
 watch(isResizing, (resizing) => {
   if (resizing) {
     window.addEventListener("mousemove", handleResizeMove);
@@ -443,7 +473,24 @@ const wrapperClasses = computed(() =>
     <div
       class="kosmos-sidebar-content sidebar__part-7"
     >
-      <aside v-if="!_hidden" :class="shellClasses">
+      <aside
+        v-if="!_hidden"
+        ref="sidebarShell"
+        :class="shellClasses"
+        @pointerover="showHoverHighlight"
+        @pointerleave="hideHoverHighlight"
+        @focusin="showHoverHighlight"
+        @focusout="hideHoverHighlight"
+        @scroll.capture="hideHoverHighlight"
+      >
+        <div
+          aria-hidden="true"
+          :class="[
+            'kosmos-sidebar-hover-highlight',
+            { 'is-visible': hoverHighlightVisible, 'is-moving': hoverHighlightMoving },
+          ]"
+          :style="hoverHighlightStyle"
+        />
         <div
           v-if="hasTopBar"
           :class="[
