@@ -1,8 +1,26 @@
 <script setup lang="ts">
-import { Button, SidebarButton } from "../../../packages/vue/src";
-import { ref } from "vue";
+import { CalendarDays, Inbox } from "@lucide/vue";
+import { Button, Sidebar } from "../../../packages/vue/src";
+import { computed, ref } from "vue";
 
 const modalOpen = ref(false);
+const selectedSidebarItem = ref("inbox");
+const sidebarItems = computed(() => [
+  {
+    id: "inbox",
+    icon: Inbox,
+    label: "Inbox",
+    active: selectedSidebarItem.value === "inbox",
+    onClick: () => { selectedSidebarItem.value = "inbox"; },
+  },
+  {
+    id: "today",
+    icon: CalendarDays,
+    label: "Today",
+    active: selectedSidebarItem.value === "today",
+    onClick: () => { selectedSidebarItem.value = "today"; },
+  },
+]);
 </script>
 
 <template>
@@ -22,8 +40,15 @@ const modalOpen = ref(false);
     <section class="sidebar-preview">
       <h2>Sidebar buttons</h2>
       <div class="rule" />
-      <SidebarButton label="Inbox" active />
-      <SidebarButton label="Today" />
+      <Sidebar
+        :primary-items="sidebarItems"
+        :show-toggle="false"
+        :drag-region="false"
+        :reserve-top-inset="false"
+        :default-width="220"
+        :min-width="220"
+        :max-width="220"
+      />
     </section>
 
     <section>

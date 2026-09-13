@@ -29,3 +29,55 @@ body.sidebar-resizing {
   user-select: none;
   cursor: col-resize;
 }
+
+.kosmos-sidebar-shell {
+  position: relative;
+}
+
+.kosmos-sidebar-shell > :not(.kosmos-sidebar-hover-highlight) {
+  position: relative;
+  z-index: 1;
+}
+
+.kosmos-sidebar-hover-highlight {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-lg);
+  background: rgb(127 127 127 / 12%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
+@supports (color: color-mix(in srgb, black, white)) {
+  .kosmos-sidebar-hover-highlight {
+    background: color-mix(in srgb, var(--sidebar-foreground) 6%, transparent);
+  }
+}
+
+.kosmos-sidebar-hover-highlight.is-visible {
+  opacity: 1;
+}
+
+.kosmos-sidebar-hover-highlight.is-moving {
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    width 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    height 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 80ms ease;
+}
+
+@media (hover: hover) {
+  .kosmos-sidebar-shell .sidebar-button__emit:hover:not(.sidebar-button--is-active),
+  .kosmos-sidebar-shell .sidebar__project-link-base:hover:not(.sidebar__project-link-active) {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kosmos-sidebar-hover-highlight {
+    transition-duration: 0.01ms;
+  }
+}
