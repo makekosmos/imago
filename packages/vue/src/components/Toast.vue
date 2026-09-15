@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { CheckCircle2, XCircle } from "@lucide/vue";
 import type { ToastTone } from "../composables/useToast";
 
 interface Props {
@@ -24,6 +25,10 @@ const clampedProgress = computed(() =>
   props.progress === undefined ? undefined : Math.min(100, Math.max(0, props.progress)),
 );
 
+const toneIcon = computed(() =>
+  props.tone === "success" ? CheckCircle2 : props.tone === "error" ? XCircle : null,
+);
+
 const emit = defineEmits<{
   dismiss: [];
 }>();
@@ -43,6 +48,13 @@ const emit = defineEmits<{
     role="status"
   >
     <div v-if="loading" class="kosmos-toast__spinner" aria-hidden="true" />
+    <component
+      v-else-if="toneIcon"
+      :is="toneIcon"
+      class="kosmos-toast__icon"
+      :class="`kosmos-toast__icon--${tone}`"
+      aria-hidden="true"
+    />
     <div class="toast__part-3">
       <div v-if="title" class="toast__part-4">{{ title }}</div>
       <div class="toast__part-5">{{ message }}</div>
