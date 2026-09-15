@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { ChevronRight, PanelLeftClose } from "@lucide/vue";
 import { computed, shallowRef, onMounted, onUnmounted, useSlots, watch } from "vue";
 import { RouterLink } from "vue-router";
-import { ChevronRight, PanelLeftClose } from "@lucide/vue";
+
 // eslint-disable-next-line import/no-unassigned-import
 import "./sidebar.css";
 import SidebarButton from "./SidebarButton.vue";
@@ -158,9 +159,7 @@ const configRef = shallowRef<SidebarConfig>({
 
 const groupedProjectSections = computed<SidebarProjectGroup[]>(() => {
   if (props.projectGroups.length > 0) {
-    return props.projectGroups.filter(
-      (group) => group.items.length > 0 || Boolean(group.onAction),
-    );
+    return props.projectGroups.filter((group) => group.items.length > 0 || Boolean(group.onAction));
   }
 
   const groups: SidebarProjectGroup[] = [];
@@ -196,16 +195,12 @@ const shellClasses = computed(() => [
   { "kosmos-sidebar-shell--drag-region": props.dragRegion },
 ]);
 
-const topToggleClass =
-  "kosmos-sidebar-top-toggle sidebar__top-toggle";
-const groupHeaderClass =
-  "sidebar__group-header";
-const groupActionClass =
-  "sidebar__group-action";
+const topToggleClass = "kosmos-sidebar-top-toggle sidebar__top-toggle";
+const groupHeaderClass = "sidebar__group-header";
+const groupActionClass = "sidebar__group-action";
 const projectLinkBaseClass =
   "kosmos-sidebar-project-link widget-nav-item sidebar__project-link-base";
-const projectLinkActiveClass =
-  "sidebar__project-link-active";
+const projectLinkActiveClass = "sidebar__project-link-active";
 
 watch([width, _hidden], () => {
   configRef.value = { width: width.value, hidden: _hidden.value };
@@ -369,9 +364,10 @@ function toggleGroup(groupId: string) {
 }
 
 function showHoverHighlight(event: PointerEvent | FocusEvent) {
-  const target = event.target instanceof Element
-    ? event.target.closest<HTMLElement>(".sidebar-button__emit, .sidebar__project-link-base")
-    : null;
+  const target =
+    event.target instanceof Element
+      ? event.target.closest<HTMLElement>(".sidebar-button__emit, .sidebar__project-link-base")
+      : null;
   if (!target) {
     hideHoverHighlight();
     return;
@@ -444,35 +440,22 @@ const wrapperClasses = computed(() =>
     :data-tone="props.tone"
     :style="panelStyle"
   >
-    <div
-      v-if="hasPanelTitleBar"
-      class="kosmos-settings-sidebar__title sidebar__part-2"
-    >
-      <div
-        v-if="$slots['title-leading']"
-        class="sidebar__part-3"
-      >
+    <div v-if="hasPanelTitleBar" class="kosmos-settings-sidebar__title sidebar__part-2">
+      <div v-if="$slots['title-leading']" class="sidebar__part-3">
         <slot name="title-leading" />
       </div>
       <span v-if="props.title" class="sidebar__part-4">{{ props.title }}</span>
-      <div
-        v-if="$slots['title-trailing']"
-        class="sidebar__part-5"
-      >
+      <div v-if="$slots['title-trailing']" class="sidebar__part-5">
         <slot name="title-trailing" />
       </div>
     </div>
-    <div
-      class="kosmos-settings-sidebar__content sidebar__part-6"
-    >
+    <div class="kosmos-settings-sidebar__content sidebar__part-6">
       <slot />
     </div>
   </aside>
 
   <div v-else :class="wrapperClasses" :style="wrapperStyle" data-testid="kosmos-sidebar">
-    <div
-      class="kosmos-sidebar-content sidebar__part-7"
-    >
+    <div class="kosmos-sidebar-content sidebar__part-7">
       <aside
         v-if="!_hidden"
         ref="sidebarShell"
@@ -527,9 +510,7 @@ const wrapperClasses = computed(() =>
           </button>
         </div>
 
-        <div
-          class="kosmos-sidebar-body sidebar__part-9"
-        >
+        <div class="kosmos-sidebar-body sidebar__part-9">
           <SidebarButton
             v-for="item in primaryItems"
             :key="item.id"
@@ -547,7 +528,11 @@ const wrapperClasses = computed(() =>
 
           <template v-if="hasProjectGroups">
             <div class="sidebar__part-10">
-              <section v-for="group in groupedProjectSections" :key="group.id" class="sidebar__part-11">
+              <section
+                v-for="group in groupedProjectSections"
+                :key="group.id"
+                class="sidebar__part-11"
+              >
                 <div class="sidebar__part-12">
                   <button
                     type="button"
@@ -683,10 +668,7 @@ const wrapperClasses = computed(() =>
       @mousedown="handleResizeStart"
     >
       <div
-        :class="[
-          'kosmos-resize-handle-line sidebar--is-state-6',
-          lineExpanded ? 'expanded' : '',
-        ]"
+        :class="['kosmos-resize-handle-line sidebar--is-state-6', lineExpanded ? 'expanded' : '']"
       />
     </div>
   </div>

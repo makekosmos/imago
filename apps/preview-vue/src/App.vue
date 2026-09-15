@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { CalendarDays, Inbox } from "@lucide/vue";
-import { Button, Sidebar } from "../../../packages/vue/src";
 import { computed, ref } from "vue";
+
+import { Button, Sidebar } from "../../../packages/vue/src";
 
 const modalOpen = ref(false);
 const selectedSidebarItem = ref("inbox");
@@ -11,14 +12,18 @@ const sidebarItems = computed(() => [
     icon: Inbox,
     label: "Inbox",
     active: selectedSidebarItem.value === "inbox",
-    onClick: () => { selectedSidebarItem.value = "inbox"; },
+    onClick: () => {
+      selectedSidebarItem.value = "inbox";
+    },
   },
   {
     id: "today",
     icon: CalendarDays,
     label: "Today",
     active: selectedSidebarItem.value === "today",
-    onClick: () => { selectedSidebarItem.value = "today"; },
+    onClick: () => {
+      selectedSidebarItem.value = "today";
+    },
   },
 ]);
 </script>

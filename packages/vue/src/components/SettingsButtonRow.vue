@@ -3,8 +3,8 @@
 // Заменяет паттерн <SettingsRow><template #control><Button .../></template>
 // </SettingsRow>. Событие @click пробрасывается наружу.
 
-import SettingsRow from "./SettingsRow.vue";
 import Button from "./Button.vue";
+import SettingsRow from "./SettingsRow.vue";
 
 interface Props {
   title: string;

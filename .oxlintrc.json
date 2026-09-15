@@ -1,0 +1,6 @@
+{
+  "plugins": ["vue"],
+  "rules": {
+    "typescript/consistent-type-imports": "error"
+  }
+}

@@ -82,7 +82,10 @@ export { usePlatform, type PlatformInfo } from "./composables/usePlatform";
 
 // Runtime helpers
 
-export { installScrollFadeListener, type InstallScrollFadeOptions } from "../../../runtime/scroll-fade";
+export {
+  installScrollFadeListener,
+  type InstallScrollFadeOptions,
+} from "../../../runtime/scroll-fade";
 export {
   installConsoleOnlyRuntimeErrors,
   type ConsoleOnlyRuntimeErrorsOptions,

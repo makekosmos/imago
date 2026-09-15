@@ -22,23 +22,15 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div
-    class="settings-row"
-    :class="stacked ? 'settings-row--is-state' : ''"
-  >
+  <div class="settings-row" :class="stacked ? 'settings-row--is-state' : ''">
     <div v-if="$slots['leading-icon']" class="settings-row__part-2" aria-hidden="true">
       <slot name="leading-icon" />
     </div>
     <div class="settings-row__part-3" :class="{ 'settings-row--is-muted': muted }">
-      <div
-        class="settings-row__part-4"
-      >
+      <div class="settings-row__part-4">
         {{ title }}
       </div>
-      <div
-        v-if="description"
-        class="settings-row__part-5"
-      >
+      <div v-if="description" class="settings-row__part-5">
         {{ description }}
       </div>
     </div>

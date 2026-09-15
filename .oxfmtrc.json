@@ -1,0 +1,6 @@
+{
+  "sortImports": {
+    "internalPattern": ["@core/**"],
+    "newlinesBetween": true
+  }
+}

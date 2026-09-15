@@ -22,11 +22,7 @@ withDefaults(defineProps<Props>(), {
   <div class="settings-advanced-intro">
     <span
       class="settings-advanced-intro__part-2"
-      :class="
-        imageSrc
-          ? 'settings-advanced-intro--is-srgb'
-          : 'settings-advanced-intro--is-state'
-      "
+      :class="imageSrc ? 'settings-advanced-intro--is-srgb' : 'settings-advanced-intro--is-state'"
       :style="{
         '--settings-advanced-intro-icon-from': iconFrom,
         '--settings-advanced-intro-icon-to': iconTo,
@@ -36,15 +32,10 @@ withDefaults(defineProps<Props>(), {
       <img v-if="imageSrc" class="settings-advanced-intro__image" :src="imageSrc" alt="" />
       <component v-else :is="icon" :size="32" :stroke-width="2" />
     </span>
-    <h1
-      class="settings-advanced-intro__part-4"
-    >
+    <h1 class="settings-advanced-intro__part-4">
       {{ title }}
     </h1>
-    <p
-      v-if="description"
-      class="settings-advanced-intro__part-5"
-    >
+    <p v-if="description" class="settings-advanced-intro__part-5">
       {{ description }}
     </p>
   </div>

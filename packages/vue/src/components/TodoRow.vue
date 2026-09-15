@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { shallowRef, computed, useTemplateRef, nextTick, ref, watch } from "vue";
 import { Calendar as CalendarIcon, DollarSign } from "@lucide/vue";
+import { shallowRef, computed, useTemplateRef, nextTick, ref, watch } from "vue";
+
 import ContextMenu from "./ContextMenu.vue";
 import ContextMenuItem from "./ContextMenuItem.vue";
 import DateChip from "./DateChip.vue";
@@ -336,12 +337,7 @@ function onDragEnd() {
         @pointerdown.stop
         @click.stop="emit('complete')"
       >
-        <span
-          :class="[
-            'todo-row--is-state-6',
-            isCompleted ? 'todo-row--is-state-7' : '',
-          ]"
-        >
+        <span :class="['todo-row--is-state-6', isCompleted ? 'todo-row--is-state-7' : '']">
           <span v-if="isCompleted" class="todo-row__part-2" />
         </span>
       </button>
@@ -356,27 +352,18 @@ function onDragEnd() {
         >
           {{ todo.title }}
         </div>
-        <div
-          v-if="!expanded && todo.notes"
-          class="todo-row__part-4"
-        >
+        <div v-if="!expanded && todo.notes" class="todo-row__part-4">
           {{ todo.notes }}
         </div>
       </div>
 
       <!-- Trailing chips (collapsed) -->
       <div v-if="!expanded" class="todo-row__part-5">
-        <span
-          v-if="todo.billable"
-          class="todo-row__part-6"
-        >
+        <span v-if="todo.billable" class="todo-row__part-6">
           <DollarSign :size="16" />
           <span v-if="todo.price">{{ todo.price }}</span>
         </span>
-        <span
-          v-if="todo.scheduledDate"
-          class="todo-row__part-7"
-        >
+        <span v-if="todo.scheduledDate" class="todo-row__part-7">
           <CalendarIcon :size="16" />
           {{ todo.scheduledDate }}
         </span>
@@ -420,9 +407,7 @@ function onDragEnd() {
           type="button"
           :class="[
             'todo-row--is-state-10',
-            billableDraft
-              ? 'todo-row--is-surface'
-              : 'todo-row--is-state-11',
+            billableDraft ? 'todo-row--is-surface' : 'todo-row--is-state-11',
           ]"
           @click="toggleBillable"
         >
@@ -430,10 +415,7 @@ function onDragEnd() {
           <span>Оплачиваемая</span>
         </button>
 
-        <label
-          v-if="billableDraft"
-          class="todo-row__part-12"
-        >
+        <label v-if="billableDraft" class="todo-row__part-12">
           <input
             type="number"
             inputmode="decimal"

@@ -45,10 +45,7 @@ export function installScrollFadeListener(options: InstallScrollFadeOptions = {}
     }
     scrollTimers.set(
       target,
-      window.setTimeout(
-        () => target.removeAttribute("data-scrolling"),
-        idleMs,
-      ),
+      window.setTimeout(() => target.removeAttribute("data-scrolling"), idleMs),
     );
   };
 

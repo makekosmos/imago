@@ -49,10 +49,7 @@ const normalizedMinHeight = computed(() =>
     :disabled="disabled"
     :readonly="readonly"
     :rows="rows"
-    :class="[
-      'textarea--is-state',
-      invalid ? 'textarea--is-state-2' : '',
-    ]"
+    :class="['textarea--is-state', invalid ? 'textarea--is-state-2' : '']"
     :style="{
       resize,
       minHeight: normalizedMinHeight ? `${normalizedMinHeight}px` : undefined,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from "vue";
+
 import { gamePosterCardClasses } from "../../../../patterns";
 
 interface GamePosterCardProps {

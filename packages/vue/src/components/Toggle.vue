@@ -8,7 +8,8 @@ import { computed } from "vue";
 
 interface Props {
   modelValue: boolean;
-  /** Текстовая подпись справа от switch'а (опционально — обычно label * приходит из обёртки SettingsRow). */ label?: string; disabled?: boolean; /** Аккессибильное имя для скрин-ридеров если нет label toggle__part-4'а. */
+  /** Текстовая подпись справа от switch'а (опционально — обычно label * приходит из обёртки SettingsRow). */ label?: string;
+  disabled?: boolean /** Аккессибильное имя для скрин-ридеров если нет label toggle__part-4'а. */;
   ariaLabel?: string;
 }
 
@@ -46,18 +47,8 @@ function onKeydown(e: KeyboardEvent) {
     @click="toggle"
     @keydown="onKeydown"
   >
-    <span
-      :class="[
-        'toggle--is-state',
-        checked ? 'toggle--is-state-2' : '',
-      ]"
-    >
-      <span
-        :class="[
-          'toggle--is-state-3',
-          checked ? 'toggle--is-state-4' : '',
-        ]"
-      />
+    <span :class="['toggle--is-state', checked ? 'toggle--is-state-2' : '']">
+      <span :class="['toggle--is-state-3', checked ? 'toggle--is-state-4' : '']" />
     </span>
     <span v-if="label" class="toggle__part-2">{{ label }}</span>
   </button>

@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends string | number">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { ChevronDown } from "@lucide/vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 /**
  * Универсальный Dropdown (shadcn-стиль): кастомный триггер + popover с
@@ -403,10 +403,7 @@ onBeforeUnmount(() => {
                 </span>
               </button>
             </template>
-            <div
-              v-if="filteredOptions.length === 0"
-              class="dropdown__part-16"
-            >
+            <div v-if="filteredOptions.length === 0" class="dropdown__part-16">
               Ничего не найдено
             </div>
           </div>

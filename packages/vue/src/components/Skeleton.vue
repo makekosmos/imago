@@ -11,10 +11,7 @@ const props = defineProps<{
 <template>
   <div
     v-bind="$attrs"
-    :class="[
-      'kosmos-skeleton skeleton--is-state',
-      props.class,
-    ]"
+    :class="['kosmos-skeleton skeleton--is-state', props.class]"
     aria-hidden="true"
   />
 </template>

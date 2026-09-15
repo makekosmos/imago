@@ -41,9 +41,7 @@ const buttonRadius = computed(() => {
     :disabled="disabled"
     :class="[
       'icon-button--is-state',
-      tone === 'destructive'
-        ? 'icon-button--is-state-2'
-        : '',
+      tone === 'destructive' ? 'icon-button--is-state-2' : '',
       !draggable ? 'icon-button--is-state-3' : '',
     ]"
     :style="{

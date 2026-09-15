@@ -21,8 +21,7 @@ defineEmits<{
     role="menuitem"
     class="context-menu-item"
     :class="{
-      'context-menu-item--is-destructive':
-        destructive,
+      'context-menu-item--is-destructive': destructive,
     }"
     :disabled="disabled"
     @click="(e) => $emit('click', e)"

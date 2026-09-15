@@ -29,8 +29,7 @@ const emit = defineEmits<{
     class="toast"
     :class="{
       'toast--is-success': tone === 'success',
-      'toast--is-error':
-        tone === 'error',
+      'toast--is-error': tone === 'error',
     }"
     role="status"
   >
@@ -38,10 +37,7 @@ const emit = defineEmits<{
     <div class="toast__part-3">
       <div v-if="title" class="toast__part-4">{{ title }}</div>
       <div class="toast__part-5">{{ message }}</div>
-      <div
-        v-if="description"
-        class="toast__part-6"
-      >
+      <div v-if="description" class="toast__part-6">
         {{ description }}
       </div>
     </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { Laptop, Monitor, Smartphone } from "@lucide/vue";
+import { computed } from "vue";
+
 import Button from "./Button.vue";
 import StatusDot from "./StatusDot.vue";
 
@@ -45,24 +46,16 @@ const tone = computed(() =>
 </script>
 
 <template>
-  <div
-    class="group sync-node-row"
-  >
-    <div
-      class="sync-node-row__part-2"
-    >
+  <div class="group sync-node-row">
+    <div class="sync-node-row__part-2">
       <component :is="icon" :size="18" :stroke-width="2" />
     </div>
 
     <div class="sync-node-row__part-3">
-      <div
-        class="sync-node-row__part-4"
-      >
+      <div class="sync-node-row__part-4">
         {{ name }}
       </div>
-      <div
-        class="sync-node-row__part-5"
-      >
+      <div class="sync-node-row__part-5">
         {{ lastSeenLabel }}
       </div>
     </div>

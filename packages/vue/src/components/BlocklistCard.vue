@@ -60,62 +60,34 @@ function onKey(e: KeyboardEvent) {
   <div
     class="blocklist-card"
     :class="{
-      'blocklist-card--is-active':
-        active,
+      'blocklist-card--is-active': active,
     }"
     role="button"
     tabindex="0"
     @click="onClick"
     @keydown="onKey"
   >
-    <div
-      class="blocklist-card__part-2"
-      aria-hidden="true"
-    >
+    <div class="blocklist-card__part-2" aria-hidden="true">
       <slot>
-        <div
-          v-for="(domain, i) in previewLines"
-          :key="i"
-          class="blocklist-card__part-3"
-        >
+        <div v-for="(domain, i) in previewLines" :key="i" class="blocklist-card__part-3">
           {{ domain }}
         </div>
       </slot>
 
-      <span
-        v-if="previewLines.length === 0"
-        class="blocklist-card__part-4"
-      >
-        —
-      </span>
+      <span v-if="previewLines.length === 0" class="blocklist-card__part-4"> — </span>
 
-      <span
-        v-if="preset"
-        class="blocklist-card__part-5"
-      >
-        preset
-      </span>
+      <span v-if="preset" class="blocklist-card__part-5"> preset </span>
 
-      <span
-        v-if="active"
-        class="blocklist-card__part-6"
-        aria-hidden="true"
-      />
+      <span v-if="active" class="blocklist-card__part-6" aria-hidden="true" />
     </div>
 
-    <div
-      class="blocklist-card__part-7"
-    >
+    <div class="blocklist-card__part-7">
       <span v-if="icon" class="blocklist-card__part-8">{{ icon }}</span>
       <div class="blocklist-card__part-9">
-        <div
-          class="blocklist-card__part-10"
-        >
+        <div class="blocklist-card__part-10">
           {{ name }}
         </div>
-        <div
-          class="blocklist-card__part-11"
-        >
+        <div class="blocklist-card__part-11">
           {{ subtitle }}
         </div>
       </div>

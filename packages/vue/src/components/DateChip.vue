@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from "vue";
 import { Calendar as CalendarIcon, X } from "@lucide/vue";
+import { computed, onMounted, onUnmounted, ref, shallowRef } from "vue";
+
 import Calendar from "./Calendar.vue";
 
 interface Props {
@@ -98,14 +99,7 @@ onUnmounted(() => {
       «Очистить дату» становилась недоступна с клавиатуры. Теперь две
       нормальные кнопки, контейнер только визуально объединяет их.
     -->
-    <div
-      :class="[
-        'date-chip--is-state',
-        props.value
-          ? 'date-chip--is-state-2'
-          : '',
-      ]"
-    >
+    <div :class="['date-chip--is-state', props.value ? 'date-chip--is-state-2' : '']">
       <button
         type="button"
         class="date-chip__button"
@@ -127,10 +121,7 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <div
-      v-if="open"
-      class="date-chip__part-6"
-    >
+    <div v-if="open" class="date-chip__part-6">
       <Calendar :value="props.value" :today="todayIso" @pick="pick" />
     </div>
   </div>

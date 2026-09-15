@@ -51,12 +51,7 @@ function onBackdropPointerDown(e: PointerEvent) {
 <template>
   <Teleport to="body">
     <transition name="kosmos-modal">
-      <div
-        v-if="props.open"
-        class="modal"
-        role="presentation"
-        @pointerdown="onBackdropPointerDown"
-      >
+      <div v-if="props.open" class="modal" role="presentation" @pointerdown="onBackdropPointerDown">
         <div
           class="kosmos-modal__panel modal__part-2"
           role="dialog"
@@ -64,15 +59,9 @@ function onBackdropPointerDown(e: PointerEvent) {
           :aria-labelledby="props.title ? 'kosmos-modal-title' : undefined"
           :style="{ width: props.width ?? 'min(440px, 92vw)' }"
         >
-          <header
-            v-if="props.title || $slots.header"
-            class="modal__header"
-          >
+          <header v-if="props.title || $slots.header" class="modal__header">
             <slot name="header">
-              <h2
-                id="kosmos-modal-title"
-                class="modal__part-4"
-              >
+              <h2 id="kosmos-modal-title" class="modal__part-4">
                 {{ props.title }}
               </h2>
             </slot>
@@ -89,10 +78,7 @@ function onBackdropPointerDown(e: PointerEvent) {
           <div class="modal__part-6">
             <slot />
           </div>
-          <footer
-            v-if="$slots.footer"
-            class="modal__footer"
-          >
+          <footer v-if="$slots.footer" class="modal__footer">
             <slot name="footer" />
           </footer>
         </div>

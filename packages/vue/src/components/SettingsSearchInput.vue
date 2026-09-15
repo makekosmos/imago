@@ -22,15 +22,8 @@ function onInput(event: Event) {
 </script>
 
 <template>
-  <label
-    class="settings-search-input"
-  >
-    <Search
-      class="settings-search-input__part-2"
-      :size="14"
-      :stroke-width="2"
-      aria-hidden="true"
-    />
+  <label class="settings-search-input">
+    <Search class="settings-search-input__part-2" :size="14" :stroke-width="2" aria-hidden="true" />
     <input
       class="settings-search-input__input"
       :value="modelValue"

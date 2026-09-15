@@ -48,7 +48,10 @@ function pick(opt: Option<T>) {
 
 <template>
   <div
-    :class="['radio-group--is-state', direction === 'horizontal' ? 'radio-group--is-col' : 'radio-group--is-state-2']"
+    :class="[
+      'radio-group--is-state',
+      direction === 'horizontal' ? 'radio-group--is-col' : 'radio-group--is-state-2',
+    ]"
     role="radiogroup"
   >
     <label
@@ -56,13 +59,9 @@ function pick(opt: Option<T>) {
       :key="String(opt.value)"
       :class="[
         'radio-group--is-state-3',
-        opt.value === modelValue
-          ? 'radio-group--is-state-4'
-          : '',
+        opt.value === modelValue ? 'radio-group--is-state-4' : '',
         opt.disabled || disabled ? 'radio-group--is-state-5' : '',
-        !opt.disabled && !disabled && opt.value !== modelValue
-          ? 'radio-group--is-state-6'
-          : '',
+        !opt.disabled && !disabled && opt.value !== modelValue ? 'radio-group--is-state-6' : '',
       ]"
     >
       <input
@@ -89,15 +88,10 @@ function pick(opt: Option<T>) {
         />
       </span>
       <span class="radio-group__part-2">
-        <span
-          class="radio-group__part-3"
-        >
+        <span class="radio-group__part-3">
           {{ opt.label }}
         </span>
-        <span
-          v-if="opt.description"
-          class="radio-group__part-4"
-        >
+        <span v-if="opt.description" class="radio-group__part-4">
           {{ opt.description }}
         </span>
       </span>

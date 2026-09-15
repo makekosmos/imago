@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+
 import type { TitlebarPlatform } from "./types";
 
 interface Props {
@@ -29,11 +30,7 @@ const titlebarClasses = computed(() => [
 
     <div class="titlebar__part-2">
       <slot name="center">
-        <span
-          v-if="title"
-          class="titlebar__part-3"
-          >{{ title }}</span
-        >
+        <span v-if="title" class="titlebar__part-3">{{ title }}</span>
       </slot>
     </div>
 

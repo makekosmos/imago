@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { shallowRef, watch, nextTick, useTemplateRef, onBeforeUnmount } from "vue";
 import { DollarSign, Folder, X } from "@lucide/vue";
+import { shallowRef, watch, nextTick, useTemplateRef, onBeforeUnmount } from "vue";
+
 import DateChip from "./DateChip.vue";
 import type { QuickEntryProject, QuickEntrySavePayload } from "./types";
 
@@ -102,7 +103,11 @@ watch(
 // безопасна (mirror ContextMenu.vue).
 function onProjectMenuOutsideClick(e: MouseEvent) {
   // SAFETY: MouseEvent.target is a DOM node for events dispatched by document.
-  if (projectMenuRef.value && e.target instanceof Node && !projectMenuRef.value.contains(e.target)) {
+  if (
+    projectMenuRef.value &&
+    e.target instanceof Node &&
+    !projectMenuRef.value.contains(e.target)
+  ) {
     showProjectMenu.value = false;
   }
 }
@@ -123,15 +128,10 @@ onBeforeUnmount(() => {
 <template>
   <div v-if="open" class="quick-entry-panel">
     <!-- Backdrop -->
-    <div
-      class="quick-entry-panel__part-2"
-      @click="close"
-    />
+    <div class="quick-entry-panel__part-2" @click="close" />
 
     <!-- Panel -->
-    <div
-      class="quick-entry-panel__part-3"
-    >
+    <div class="quick-entry-panel__part-3">
       <div class="quick-entry-panel__part-4">
         <input
           ref="titleInput"
@@ -167,9 +167,7 @@ onBeforeUnmount(() => {
             type="button"
             :class="[
               'quick-entry-panel--is-state',
-              billable
-                ? 'quick-entry-panel--is-surface'
-                : 'quick-entry-panel--is-state-2',
+              billable ? 'quick-entry-panel--is-surface' : 'quick-entry-panel--is-state-2',
             ]"
             :title="billable ? 'Оплачиваемая задача' : 'Сделать оплачиваемой'"
             @click="billable = !billable"
@@ -178,10 +176,7 @@ onBeforeUnmount(() => {
             <span>Оплачиваемая</span>
           </button>
 
-          <label
-            v-if="billable"
-            class="quick-entry-panel__part-10"
-          >
+          <label v-if="billable" class="quick-entry-panel__part-10">
             <input
               type="number"
               inputmode="decimal"
@@ -211,10 +206,7 @@ onBeforeUnmount(() => {
               <span>{{ selectedProject()?.title ?? "Входящие" }}</span>
             </button>
 
-            <div
-              v-if="showProjectMenu"
-              class="quick-entry-panel__part-14"
-            >
+            <div v-if="showProjectMenu" class="quick-entry-panel__part-14">
               <button
                 type="button"
                 :class="[
@@ -250,11 +242,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <button
-        type="button"
-        class="quick-entry-panel__button"
-        @click="close"
-      >
+      <button type="button" class="quick-entry-panel__button" @click="close">
         <X :size="16" />
       </button>
     </div>

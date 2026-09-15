@@ -34,7 +34,21 @@ const props = withDefaults(
      * При изменении на не-пустую строку — emit'им `update:modelValue` и
      * выходим из capture state. */
     pendingAccelerator?: string | null;
-    /** Cancel signal от parent'а (например юзер нажал Escape — backend * прислал `dictation_capture_cancelled`). Toggle для тригера. */ pendingCancel?: number; }>(), { placeholder: "Не задано", capturePrompt: "Нажмите сочетание…", disabled: false, externalCapture: false, pendingAccelerator: null, pendingCancel: 0, }, ); const emit = defineEmits<{ "update:modelValue": [v: string]; /** Срабатывает при Escape — parent может отреагировать (например clear). */ cancel: []; /** В externalCapture mode — parent должен стартовать системный hook. */ "capture-start": []; /** В externalCapture mode — parent должен остановить системный hook * (например при hotkey-capture__part-14'е окна или unmount). */
+    /** Cancel signal от parent'а (например юзер нажал Escape — backend * прислал `dictation_capture_cancelled`). Toggle для тригера. */ pendingCancel?: number;
+  }>(),
+  {
+    placeholder: "Не задано",
+    capturePrompt: "Нажмите сочетание…",
+    disabled: false,
+    externalCapture: false,
+    pendingAccelerator: null,
+    pendingCancel: 0,
+  },
+);
+const emit = defineEmits<{
+  "update:modelValue": [v: string];
+  /** Срабатывает при Escape — parent может отреагировать (например clear). */ cancel: [];
+  /** В externalCapture mode — parent должен стартовать системный hook. */ "capture-start": [] /** В externalCapture mode — parent должен остановить системный hook * (например при hotkey-capture__part-14'е окна или unmount). */;
   "capture-end": [];
 }>();
 
@@ -160,12 +174,8 @@ function onKey(e: KeyboardEvent) {
     type="button"
     :class="[
       'hotkey-capture--is-state',
-      capturing
-        ? 'hotkey-capture--is-state-2'
-        : '',
-      !capturing
-        ? 'hotkey-capture--is-state-3'
-        : '',
+      capturing ? 'hotkey-capture--is-state-2' : '',
+      !capturing ? 'hotkey-capture--is-state-3' : '',
     ]"
     :disabled="disabled"
     @click="start"
@@ -174,11 +184,7 @@ function onKey(e: KeyboardEvent) {
   >
     <span v-if="capturing" class="hotkey-capture">{{ capturePrompt }}</span>
     <span v-else-if="keyParts.length > 0" class="hotkey-capture__part-2">
-      <kbd
-        v-for="part in keyParts"
-        :key="part"
-        class="hotkey-capture__part-3"
-      >
+      <kbd v-for="part in keyParts" :key="part" class="hotkey-capture__part-3">
         {{ part }}
       </kbd>
     </span>

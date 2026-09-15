@@ -21,17 +21,14 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div
-    class="empty-state"
-    :class="compact ? 'empty-state--is-py' : 'empty-state--is-state'"
-  >
-    <div
-      v-if="$slots.icon"
-      class="empty-state__part-2"
-    >
+  <div class="empty-state" :class="compact ? 'empty-state--is-py' : 'empty-state--is-state'">
+    <div v-if="$slots.icon" class="empty-state__part-2">
       <slot name="icon" />
     </div>
-    <div class="empty-state__part-3" :class="compact ? 'empty-state--is-rem' : 'empty-state--is-state-2'">
+    <div
+      class="empty-state__part-3"
+      :class="compact ? 'empty-state--is-rem' : 'empty-state--is-state-2'"
+    >
       {{ title }}
     </div>
     <div v-if="description" class="empty-state__part-4">

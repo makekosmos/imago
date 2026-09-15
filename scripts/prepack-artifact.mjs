@@ -40,23 +40,27 @@ function walk(root, directory, files = [], rejectSymlinks = false, skipNestedNod
     if (entry.isDirectory()) {
       if (skipNestedNodeModules && entry.name === "node_modules") continue;
       walk(root, fullPath, files, rejectSymlinks, skipNestedNodeModules);
-    }
-    else if (entry.isFile()) files.push(path.relative(root, fullPath).replaceAll("\\", "/"));
+    } else if (entry.isFile()) files.push(path.relative(root, fullPath).replaceAll("\\", "/"));
   }
   return files;
 }
 
 function defaultBuild(root, mode) {
-  execFileSync(process.execPath, [path.join(root, "node_modules", "vite", "bin", "vite.js"), "build", "--mode", mode], {
-    cwd: root,
-    stdio: "inherit",
-    env: process.env,
-  });
+  execFileSync(
+    process.execPath,
+    [path.join(root, "node_modules", "vite", "bin", "vite.js"), "build", "--mode", mode],
+    {
+      cwd: root,
+      stdio: "inherit",
+      env: process.env,
+    },
+  );
 }
 
 function resolvePnpmVersion() {
-  const packageManager = JSON.parse(readFileSync(path.join(repositoryRoot, "package.json"), "utf8"))
-    .packageManager;
+  const packageManager = JSON.parse(
+    readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
+  ).packageManager;
   return packageManager?.startsWith("pnpm@") ? packageManager.slice("pnpm@".length) : null;
 }
 
@@ -190,7 +194,10 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
       files: dependencyFiles,
       build,
       allowed: allowedDependencies,
-      sha256: digestFiles(files, JSON.stringify({ allowed: allowedDependencies, build: build.packages })),
+      sha256: digestFiles(
+        files,
+        JSON.stringify({ allowed: allowedDependencies, build: build.packages }),
+      ),
     };
   }
 
@@ -223,11 +230,13 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
     });
   }
 
-  function preparedState(snapshot = {
-    input: sourceFingerprint(),
-    dependencies: dependencyFingerprint(),
-    variant: variant(),
-  }) {
+  function preparedState(
+    snapshot = {
+      input: sourceFingerprint(),
+      dependencies: dependencyFingerprint(),
+      variant: variant(),
+    },
+  ) {
     const outputs = outputFiles();
     if (!outputs.some(({ path: file }) => file === "dist/index.js")) {
       throw new Error("prepared artifact is missing dist/index.js");
@@ -265,11 +274,14 @@ export function createArtifactContract(workspaceRoot = repositoryRoot, runBuild 
       variant: variant(),
     };
     runBuild(root, snapshot.variant.mode);
-    if (JSON.stringify(snapshot) !== JSON.stringify({
-      input: sourceFingerprint(),
-      dependencies: dependencyFingerprint(),
-      variant: variant(),
-    })) {
+    if (
+      JSON.stringify(snapshot) !==
+      JSON.stringify({
+        input: sourceFingerprint(),
+        dependencies: dependencyFingerprint(),
+        variant: variant(),
+      })
+    ) {
       rmSync(statePath, { force: true });
       throw new Error("Imago build inputs changed during build");
     }

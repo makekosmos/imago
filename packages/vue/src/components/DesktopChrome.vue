@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, useSlots } from "vue";
+
 import Titlebar from "./Titlebar.vue";
 import type { TitlebarPlatform } from "./types";
 
@@ -38,9 +39,7 @@ provide("kosmosHasSidebar", hasSidebar);
         'kosmos-desktop-chrome-settings__header desktop-chrome--is-state-3',
         // Native window controls: на macOS traffic lights слева → отступ
         // слева под них; на Windows min/max/close справа → отступ справа.
-        props.platform === 'mac'
-          ? 'desktop-chrome--is-px'
-          : 'desktop-chrome--is-state-4',
+        props.platform === 'mac' ? 'desktop-chrome--is-px' : 'desktop-chrome--is-state-4',
       ]"
     >
       <div class="kosmos-desktop-chrome-settings__header-left desktop-chrome">
@@ -65,10 +64,7 @@ provide("kosmosHasSidebar", hasSidebar);
       aria-hidden="true"
     />
 
-    <aside
-      v-if="hasSidebar"
-      class="desktop-chrome__part-7"
-    >
+    <aside v-if="hasSidebar" class="desktop-chrome__part-7">
       <slot name="sidebar" />
     </aside>
 

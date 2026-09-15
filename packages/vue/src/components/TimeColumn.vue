@@ -53,12 +53,7 @@ watch(
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="kosmos-timecol time-column__root"
-    :aria-label="props.label"
-    role="listbox"
-  >
+  <div ref="root" class="kosmos-timecol time-column__root" :aria-label="props.label" role="listbox">
     <button
       v-for="v in items"
       :key="v"
@@ -66,8 +61,7 @@ watch(
       role="option"
       class="time-column__button"
       :class="{
-        'time-column--is-value':
-          v === props.value,
+        'time-column--is-value': v === props.value,
       }"
       :aria-selected="v === props.value"
       :data-value="v"

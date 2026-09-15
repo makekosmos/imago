@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
+
 import TitlebarButton from "./TitlebarButton.vue";
 
 interface Props {

@@ -16,11 +16,8 @@ const emit = defineEmits<{
 }>();
 
 function className(active: boolean) {
-  const base =
-    "kosmos-sidebar-btn sidebar-button__emit";
-  return active
-    ? `${base} sidebar-button--is-active`
-    : base;
+  const base = "kosmos-sidebar-btn sidebar-button__emit";
+  return active ? `${base} sidebar-button--is-active` : base;
 }
 </script>
 

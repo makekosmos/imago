@@ -7,10 +7,7 @@ defineProps<Props>();
 </script>
 
 <template>
-  <div
-    class="kosmos-settings-list settings-list"
-    :class="className"
-  >
+  <div class="kosmos-settings-list settings-list" :class="className">
     <slot />
   </div>
 </template>

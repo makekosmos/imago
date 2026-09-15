@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
+
 import Dropdown from "./Dropdown.vue";
 
 interface Props {
@@ -156,9 +157,7 @@ function pickCell(c: DayCell) {
 </script>
 
 <template>
-  <div
-    class="calendar"
-  >
+  <div class="calendar">
     <header class="calendar__header">
       <div class="calendar__part-3">
         <Dropdown
@@ -196,11 +195,7 @@ function pickCell(c: DayCell) {
     </header>
 
     <div class="calendar__part-8">
-      <div
-        v-for="weekday in RU_WEEKDAYS_SHORT"
-        :key="weekday"
-        class="calendar__part-9"
-      >
+      <div v-for="weekday in RU_WEEKDAYS_SHORT" :key="weekday" class="calendar__part-9">
         {{ weekday }}
       </div>
 
@@ -211,10 +206,8 @@ function pickCell(c: DayCell) {
         class="calendar-day calendar__button"
         :class="{
           'calendar--is-is-outside-month': c.isOutsideMonth,
-          'calendar--is-is-selected':
-            c.isToday && !c.isSelected,
-          'calendar-day--selected calendar--is-is-selected-2':
-            c.isSelected,
+          'calendar--is-is-selected': c.isToday && !c.isSelected,
+          'calendar-day--selected calendar--is-is-selected-2': c.isSelected,
         }"
         @click="pickCell(c)"
       >

@@ -5,8 +5,9 @@
 // между shell/SettingsView и arrancador/SettingsPage.
 
 import { computed } from "vue";
-import SettingsRow from "./SettingsRow.vue";
+
 import Dropdown from "./Dropdown.vue";
+import SettingsRow from "./SettingsRow.vue";
 
 interface Option<V> {
   value: V;

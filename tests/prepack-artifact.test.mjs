@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { createArtifactContract } from "../scripts/prepack-artifact.mjs";
 
 function fixture() {
@@ -10,18 +11,40 @@ function fixture() {
     mkdirSync(join(root, directory), { recursive: true });
     writeFileSync(join(root, directory, "index.ts"), `${directory}\n`);
   }
-  for (const file of ["index.ts", "vite.config.mjs", "pnpm-lock.yaml", "scripts/prepack-artifact.mjs"]) {
+  for (const file of [
+    "index.ts",
+    "vite.config.mjs",
+    "pnpm-lock.yaml",
+    "scripts/prepack-artifact.mjs",
+  ]) {
     writeFileSync(join(root, file), file);
   }
   writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture", type: "module" }));
   for (const [name, packageJson] of [
-    ["vite", { name: "vite", version: "1", dependencies: { rolldown: "1", "missing-native": "1" }, optionalDependencies: { "missing-native": "1" } }],
-    ["@vitejs/plugin-vue", { name: "@vitejs/plugin-vue", version: "1", dependencies: { "@rolldown/pluginutils": "1" } }],
-    ["@vue/compiler-sfc", { name: "@vue/compiler-sfc", version: "1", dependencies: { "@vue/compiler-core": "1" } }],
+    [
+      "vite",
+      {
+        name: "vite",
+        version: "1",
+        dependencies: { rolldown: "1", "missing-native": "1" },
+        optionalDependencies: { "missing-native": "1" },
+      },
+    ],
+    [
+      "@vitejs/plugin-vue",
+      { name: "@vitejs/plugin-vue", version: "1", dependencies: { "@rolldown/pluginutils": "1" } },
+    ],
+    [
+      "@vue/compiler-sfc",
+      { name: "@vue/compiler-sfc", version: "1", dependencies: { "@vue/compiler-core": "1" } },
+    ],
     ["rolldown", { name: "rolldown", version: "1" }],
     ["@rolldown/pluginutils", { name: "@rolldown/pluginutils", version: "1" }],
     ["@vue/compiler-core", { name: "@vue/compiler-core", version: "1" }],
-    ["vue", { name: "vue", version: "1", exports: { "./compiler-sfc": "./compiler-sfc/index.js" } }],
+    [
+      "vue",
+      { name: "vue", version: "1", exports: { "./compiler-sfc": "./compiler-sfc/index.js" } },
+    ],
   ]) {
     const directory = join(root, "node_modules", ...name.split("/"));
     mkdirSync(directory, { recursive: true });

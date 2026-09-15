@@ -9,6 +9,7 @@
 // проверок: один сигнал, единый маппинг, переживает спуфинг userAgent.
 
 import { computed, type ComputedRef } from "vue";
+
 import type { TitlebarPlatform } from "../components/types";
 
 function detectPlatform(): TitlebarPlatform {

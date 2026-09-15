@@ -51,17 +51,10 @@ function onKeydown(e: KeyboardEvent) {
     :aria-checked="checked"
     :aria-label="ariaLabel"
     :disabled="disabled"
-    :class="[
-      'checkbox--is-state',
-      checked ? 'checkbox--is-state-2' : '',
-    ]"
+    :class="['checkbox--is-state', checked ? 'checkbox--is-state-2' : '']"
     @click="toggle"
     @keydown="onKeydown"
   >
-    <span
-      v-if="checked"
-      class="checkbox"
-      aria-hidden="true"
-    />
+    <span v-if="checked" class="checkbox" aria-hidden="true" />
   </button>
 </template>

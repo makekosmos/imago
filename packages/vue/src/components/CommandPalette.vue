@@ -130,11 +130,7 @@ function handleListKeydown(event: KeyboardEvent) {
           @input="updateQuery(($event.target as HTMLInputElement).value)"
           @keydown="handleInputKeydown"
         />
-        <kbd
-          class="command-palette__part-7"
-        >
-          esc
-        </kbd>
+        <kbd class="command-palette__part-7"> esc </kbd>
       </div>
 
       <div class="command-palette__part-8" />

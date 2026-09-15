@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+
 import type { StatusDotTone } from "./types";
 
 interface Props {
@@ -85,10 +86,7 @@ onUnmounted(() => {
     >
       <span class="status-dot__part-3" />
     </button>
-    <span
-      v-if="showLabel"
-      class="status-dot__part-4"
-    >
+    <span v-if="showLabel" class="status-dot__part-4">
       {{ label }}
     </span>
 

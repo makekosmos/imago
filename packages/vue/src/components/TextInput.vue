@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import {
-  textInputVariants,
-  type TextInputProps,
-} from "@core/components/textInput";
+import { textInputVariants, type TextInputProps } from "@core/components/textInput";
 
-const props = withDefaults(
-  defineProps<TextInputProps>(),
-  {
-    value: '',
-    type: "text",
-    size: "sm",
-    disabled: false,
-    readonly: false,
-  },
-);
+const props = withDefaults(defineProps<TextInputProps>(), {
+  value: "",
+  type: "text",
+  size: "sm",
+  disabled: false,
+  readonly: false,
+});
 </script>
 
 <template>
@@ -26,9 +20,11 @@ const props = withDefaults(
     :inputmode="props.inputmode"
     :aria-invalid="props.invalid"
     :data-invalid="props.invalid"
-    :class="textInputVariants({
-      size: props.size,
-    })"
-    @input="(e) =>props.onValueChange?.((e.target as HTMLInputElement).value)"
+    :class="
+      textInputVariants({
+        size: props.size,
+      })
+    "
+    @input="(e) => props.onValueChange?.((e.target as HTMLInputElement).value)"
   />
 </template>

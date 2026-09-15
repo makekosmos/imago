@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { Calendar as CalendarIcon } from "@lucide/vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+
 import Calendar from "./Calendar.vue";
 
 interface Props {
@@ -360,14 +361,8 @@ onBeforeUnmount(() => {
       :aria-label="label ?? 'Выбрать дату и время'"
       @click="onTriggerClick"
     >
-      <span class="date-time-picker__part-3">{{
-        displayLabel
-      }}</span>
-      <CalendarIcon
-        :size="14"
-        :stroke-width="1.7"
-        class="date-time-picker__part-4"
-      />
+      <span class="date-time-picker__part-3">{{ displayLabel }}</span>
+      <CalendarIcon :size="14" :stroke-width="1.7" class="date-time-picker__part-4" />
     </button>
 
     <Teleport to="body">
@@ -395,30 +390,15 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <footer
-          v-if="!dateOnly"
-          class="date-time-picker__footer"
-        >
-          <button
-            type="button"
-            class="date-time-picker__button"
-            @click="clearValue"
-          >
+        <footer v-if="!dateOnly" class="date-time-picker__footer">
+          <button type="button" class="date-time-picker__button" @click="clearValue">
             Очистить
           </button>
           <div class="date-time-picker__part-10" />
-          <button
-            type="button"
-            class="date-time-picker__button-2"
-            @click="open = false"
-          >
+          <button type="button" class="date-time-picker__button-2" @click="open = false">
             Отмена
           </button>
-          <button
-            type="button"
-            class="date-time-picker__button-3"
-            @click="applyDraft"
-          >
+          <button type="button" class="date-time-picker__button-3" @click="applyDraft">
             Сохранить
           </button>
         </footer>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from "vue";
+
 import { ToastKey } from "../composables/useToast";
 import Toast from "./Toast.vue";
 
@@ -10,10 +11,7 @@ const state = inject(ToastKey, null);
 
 <template>
   <Teleport v-if="state" to="body">
-    <div
-      class="toast-host"
-      aria-live="polite"
-    >
+    <div class="toast-host" aria-live="polite">
       <TransitionGroup name="kosmos-toast">
         <Toast
           v-for="item in state.items.value"
