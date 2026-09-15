@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { buttonVariants, type ButtonProps } from '@core/button';
+import { buttonVariants, type ButtonSharedProps } from '@core/components/button';
 
 
-const props = withDefaults(defineProps<ButtonProps>(), {
+const props = withDefaults(defineProps<ButtonSharedProps>(), {
   loading: false,
   disabled: false,
   type: 'button'

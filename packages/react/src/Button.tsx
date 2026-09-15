@@ -1,4 +1,4 @@
-import { buttonVariants, type ButtonProps } from "@core/button";
+import { buttonVariants, type ButtonSharedProps } from "@core/components/button";
 
 export default function Button({
   variant,
@@ -7,7 +7,7 @@ export default function Button({
   disabled = false,
   type = "button",
   ...props
-}: ButtonProps) {
+}: ButtonSharedProps) {
   return (
     <button
       type={type}

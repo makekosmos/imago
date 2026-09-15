@@ -1,0 +1,179 @@
+.button {
+  --imago-border-style: solid;
+  --imago-duration: 0.12s;
+  --imago-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--spacing) * 2);
+  border-style: solid;
+  border-color: transparent;
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: default;
+  corner-shape: var(--corner-shape);
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--imago-duration, var(--default-transition-duration));
+  transition-timing-function: var(--imago-ease, var(--default-transition-timing-function));
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.button--sm {
+  height: calc(var(--spacing) * 7);
+  padding-inline: calc(var(--spacing) * 2.5);
+  border-style: var(--imago-border-style);
+  border-width: 1px;
+  border-radius: var(--radius-md);
+  font-size: var(--kosmos-text-caption-size);
+}
+
+.button--md {
+  height: calc(var(--spacing) * 10);
+  padding-inline: calc(var(--spacing) * 4);
+  border-style: var(--imago-border-style);
+  border-width: 2px;
+  border-radius: var(--radius-lg);
+  font-size: var(--kosmos-text-control-size);
+}
+
+.button--danger {
+  border-color: var(--destructive);
+  background-color: transparent;
+  color: var(--destructive);
+
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      border-color: var(--destructive);
+      background-color: var(--destructive);
+
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+      }
+    }
+  }
+}
+
+.button--ghost {
+  border-color: var(--border);
+  background-color: var(--foreground);
+  color: var(--foreground);
+
+  @supports (color: color-mix(in lab, red, red)) {
+    background-color: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      background-color: var(--foreground);
+
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+        background-color: color-mix(in srgb, var(--foreground) 7%, var(--background));
+      }
+    }
+  }
+}
+
+.button--primary {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--accent-foreground, var(--background));
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      background-color: var(--accent);
+
+      @supports (color: color-mix(in lab, red, red)) {
+        border-color: color-mix(in srgb, var(--accent) 88%, white);
+        background-color: color-mix(in srgb, var(--accent) 88%, white);
+      }
+    }
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--accent);
+
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in srgb, var(--accent) 80%, black);
+    }
+  }
+}
+
+.button--success {
+  border-color: var(--status-success);
+  background-color: var(--status-success);
+  color: var(--status-success);
+
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in srgb, var(--status-success) 50%, var(--border));
+    background-color: color-mix(in srgb, var(--status-success) 20%, var(--background));
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background-color: var(--status-success);
+
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in srgb, var(--status-success) 28%, var(--background));
+      }
+    }
+  }
+}
+
+.button--surface {
+  border-color: var(--border-color-high-emphasis);
+  background-color: var(--foreground);
+  color: var(--foreground);
+
+  @supports (color: color-mix(in lab, red, red)) {
+    background-color: color-mix(in srgb, var(--foreground) 18%, var(--background));
+  }
+
+  &:disabled {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background-color: var(--foreground);
+
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in srgb, var(--foreground) 22%, var(--background));
+      }
+    }
+  }
+}
+
+/* После вариантов: loading приглушает и .button--surface:disabled. */
+.button[data-loading="true"] {
+  opacity: 0.7;
+}
+
+/* Motion timing adapted from Fluid Functionalism (MIT): github.com/mickadesign/fluid-functionalism */
+@media (prefers-reduced-motion: no-preference) {
+  button.button:not(:disabled) {
+    transition:
+      background-color 80ms ease,
+      border-color 80ms ease,
+      color 80ms ease,
+      transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  button.button:active:not(:disabled) {
+    transform: translateY(1px);
+    transition-duration: 80ms;
+  }
+}
