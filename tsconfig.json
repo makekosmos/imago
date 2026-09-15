@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "allowArbitraryExtensions": true,
@@ -13,5 +13,14 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["env.d.ts", "index.ts", "packages/**/*.ts", "packages/**/*.tsx", "apps/**/*.ts", "apps/**/*.tsx"]
+  "include": [
+    "env.d.ts",
+    "index.ts",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "packages/**/*.vue",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "apps/**/*.vue"
+  ]
 }
