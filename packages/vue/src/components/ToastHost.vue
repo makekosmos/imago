@@ -23,6 +23,7 @@ const state = inject(ToastKey, null);
           :description="item.description"
           :tone="item.tone"
           :loading="item.loading"
+          :progress="item.progress"
           :closable="item.closable"
           @dismiss="state.api.dismiss(item.id)"
         />
