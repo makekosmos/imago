@@ -1,4 +1,4 @@
-import { buttonVariantsProps } from "@core/components/button/button";
+import { buttonVariantsProps } from "./button";
 
 export type ButtonSharedProps = buttonVariantsProps & {
   loading?: boolean;
