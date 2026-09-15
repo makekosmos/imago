@@ -1,11 +1,11 @@
-export default function clsx() {
+export default function clsx(...args: unknown[]) {
   let i = 0;
-  let len = arguments.length;
+  let len = args.length;
   let str = "";
   let temp: unknown;
 
   while (i < len) {
-    if ((temp = arguments[i])) {
+    if ((temp = args[i])) {
       if (typeof temp === "string") {
         str += (str && " ") + temp;
       }
