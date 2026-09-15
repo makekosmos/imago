@@ -1,22 +1,18 @@
 import cva from "@core/cva";
 
-const buttonVariantMap = {
-  primary: "button--primary",
-  ghost: "button--ghost",
-  surface: "button--surface",
-  success: "button--success",
-  danger: "button--danger",
-} as const;
-
-const buttonSizeMap = {
-  md: "button--md",
-  sm: "button--sm",
-} as const;
-
 export const buttonVariants = cva("button", {
   variants: {
-    variant: buttonVariantMap,
-    size: buttonSizeMap,
+    variant: {
+      primary: "button--primary",
+      ghost: "button--ghost",
+      surface: "button--surface",
+      success: "button--success",
+      danger: "button--danger",
+    },
+    size: {
+      md: "button--md",
+      sm: "button--sm",
+    },
   },
 
   defaultVariants: {
@@ -25,7 +21,4 @@ export const buttonVariants = cva("button", {
   },
 });
 
-export type buttonVariantsProps = {
-  variant?: keyof typeof buttonVariantMap;
-  size?: keyof typeof buttonSizeMap;
-};
+export type buttonVariantsProps = Parameters<typeof buttonVariants>[0];
