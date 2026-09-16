@@ -2,8 +2,17 @@ glob_matcher: doublestar
 
 pre-commit:
   commands:
+    lint-fix:
+      run: pnpm exec oxlint --fix .
+      stage_fixed: true
+
+    format:
+      run: pnpm exec oxfmt .
+      stage_fixed: true
+
     quality:
       run: pnpm check:quick
+
 pre-push:
   commands:
     verification:
