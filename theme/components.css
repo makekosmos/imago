@@ -21,6 +21,7 @@
 .blocklist-card {
   overflow: hidden;
 }
+
 .blocklist-card {
   border-radius: var(--radius-xl);
 }
@@ -643,96 +644,6 @@
   .calendar--is-is-selected-2:hover {
     background-color: var(--accent);
   }
-}
-.checkbox--is-state {
-  position: relative;
-}
-.checkbox--is-state {
-  display: inline-flex;
-}
-.checkbox--is-state {
-  width: calc(var(--spacing) * 6);
-  height: calc(var(--spacing) * 6);
-}
-.checkbox--is-state {
-  flex-shrink: 0;
-}
-.checkbox--is-state {
-  cursor: default;
-}
-.checkbox--is-state {
-  align-items: center;
-}
-.checkbox--is-state {
-  justify-content: center;
-}
-.checkbox--is-state {
-  border-radius: var(--radius-lg);
-}
-.checkbox--is-state {
-  border-style: var(--imago-border-style);
-  border-width: 2px;
-}
-.checkbox--is-state {
-  --imago-border-style: solid;
-  border-style: solid;
-}
-.checkbox--is-state {
-  border-color: var(--ring);
-}
-.checkbox--is-state {
-  background-color: #0000;
-}
-.checkbox--is-state {
-  padding: 0;
-}
-.checkbox--is-state {
-  outline-offset: 2px;
-}
-.checkbox--is-state {
-  transition-property: border-color, background-color;
-  transition-timing-function: var(--imago-ease, var(--default-transition-timing-function));
-  transition-duration: var(--imago-duration, var(--default-transition-duration));
-}
-.checkbox--is-state {
-  --imago-duration: 0.15s;
-  transition-duration: 0.15s;
-}
-@media (hover: hover) {
-  .checkbox--is-state:hover:not(:disabled) {
-    border-color: var(--kosmos-checkbox-accent, var(--accent));
-  }
-}
-.checkbox--is-state:focus-visible {
-  outline-style: var(--imago-outline-style);
-  outline-width: 2px;
-}
-.checkbox--is-state:focus-visible {
-  outline-color: var(--kosmos-checkbox-accent, var(--accent));
-}
-.checkbox--is-state:disabled {
-  cursor: not-allowed;
-}
-.checkbox--is-state:disabled {
-  opacity: 0.5;
-}
-.checkbox--is-state-2 {
-  border-color: var(--kosmos-checkbox-accent, var(--accent));
-}
-.checkbox {
-  position: absolute;
-}
-.checkbox {
-  inset: calc(var(--spacing) * 2);
-}
-.checkbox {
-  display: block;
-}
-.checkbox {
-  border-radius: 0;
-}
-.checkbox {
-  background-color: var(--kosmos-checkbox-accent, var(--accent));
 }
 .command-palette {
   position: fixed;
