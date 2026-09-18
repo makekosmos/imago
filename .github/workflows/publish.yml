@@ -1,9 +1,9 @@
 name: Publish package
 
+# KOS-76: hosted triggers are disabled. Publication is manual dispatch only;
+# pushing a `visuals-v*` tag no longer starts this workflow.
 on:
   workflow_dispatch:
-  push:
-    tags: ["visuals-v*"]
 
 permissions:
   contents: read
