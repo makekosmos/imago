@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .tmp/
+target/
 
 # Local tooling and generated test output
 .worktrees/

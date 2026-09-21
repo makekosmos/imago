@@ -1,0 +1,14 @@
+[package]
+name = "imago-gpui"
+version = "0.1.0"
+edition = "2021"
+description = "Imago GPUI core: Agenda-seeded palettes, runtime theme helpers and shared sidebar/button chrome for Kosmos desktop apps."
+license = "MIT"
+
+[dependencies]
+gpui = { package = "gpui-kit", version = "=0.6.2" }
+gpui-component = "=0.6.2"
+# Transitive pin: gpui-component 0.6.2 predates a breaking change in
+# gpui-base 0.6.5+ (inspector API). Keep this in sync with consumers'
+# resolved version; it constrains their lockfile via unification.
+gpui-base = "=0.6.4"

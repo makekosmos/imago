@@ -1,0 +1,18 @@
+# Cargo workspace for Imago's native GPUI crates. The Vue/npm package
+# (@makekosmos/visuals) is unaffected — Rust lives only under crates/.
+# Consumers depend on members via git rev; cargo resolves packages inside
+# this workspace.
+[workspace]
+resolver = "2"
+members = ["crates/imago-gpui"]
+
+# Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
+# gpui (and our own render path) make even modest UIs run at ~20fps.
+# Mirrors the profile consumers (manager-gpui, agenda-gpui) ship with.
+[profile.dev]
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
