@@ -31,12 +31,22 @@ imago-gpui = { git = "https://github.com/makekosmos/imago.git", rev = "<sha>" }
 App wiring:
 
 ```rust,ignore
-gpui::application().run(|cx: &mut App| {
+gpui::application().with_assets(imago_gpui::assets::Assets).run(|cx: &mut App| {
     gpui_component::init(cx);
+    cx.text_system().add_fonts(imago_gpui::assets::font_bytes()).unwrap();
     imago_gpui::theme::apply(cx);
     // ...
 });
 ```
+
+The bundled Hugeicons SVGs come from `@hugeicons/core-free-icons` 4.3.2.
+Inter and the settings/sidebar/help glyphs match Agenda GPUI at
+`27b737a131494a51a68bd012ecf32a58854afa4a`. Applications choose icon paths
+through `gpui_component::Icon::default().path("icons/database.svg")`.
+The theme uses a 16px rem for Agenda's spacing; body and sidebar text use
+explicit 13px sizes. Applications should set `.font_family("Inter")` on
+their root. Asset and font registration are required; applying colors alone
+does not install them.
 
 ## Local gates
 

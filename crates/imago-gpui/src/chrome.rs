@@ -15,7 +15,7 @@ use gpui::{
 use gpui_component::scroll::{Scrollable, ScrollableElement};
 use gpui_component::{Icon, Sizable};
 
-use crate::theme::{c, rgba, BORDER, FG, SIDEBAR_BG, SIDEBAR_DIVIDER};
+use crate::theme::{c, rgba, BG, FG, SIDEBAR_DIVIDER};
 
 /// Sidebar width shared by Agenda/Manager (`SIDEBAR_W` in both shells).
 pub const SIDEBAR_W: f32 = 240.0;
@@ -31,7 +31,7 @@ pub fn sidebar() -> Div {
         .w(px(SIDEBAR_W))
         .h_full()
         .flex_shrink_0()
-        .bg(c(SIDEBAR_BG()))
+        .bg(c(BG()))
         .border_r_1()
         .border_color(c(SIDEBAR_DIVIDER()))
         .flex()
@@ -54,7 +54,9 @@ pub fn sidebar_titlebar() -> Div {
 pub fn sidebar_body() -> Scrollable<Div> {
     div()
         .flex_1()
+        .min_h_0()
         .overflow_y_scrollbar()
+        .px_2()
         .py_1()
         .flex()
         .flex_col()
@@ -81,8 +83,6 @@ pub fn titlebar() -> Div {
         .flex()
         .items_center()
         .px_4()
-        .border_b_1()
-        .border_color(c(BORDER()))
 }
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>;

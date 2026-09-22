@@ -25,6 +25,7 @@
 //! });
 //! ```
 
+pub mod assets;
 pub mod button;
 pub mod chrome;
 pub mod palettes;

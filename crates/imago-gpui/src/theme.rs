@@ -249,9 +249,10 @@ fn config(p: &Palette, mode: ThemeMode) -> ThemeConfig {
             "Imago Light".into()
         },
         mode,
-        // fs13 like the Vue/Agenda shells; controls get 8px/10px radii.
-        font_size: Some(13.0),
-        font_family: None,
+        // Root uses this as the rem unit, including spacing and control sizes.
+        // Agenda uses a 16px rem with explicit 13px body/sidebar text.
+        font_size: Some(16.0),
+        font_family: Some("Inter".into()),
         mono_font_family: None,
         mono_font_size: None,
         radius: Some(8),
