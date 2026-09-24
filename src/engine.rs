@@ -5,14 +5,19 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::{path::PathBuf, time::Duration};
 
-const CLIENT_CLASS: &str = "manager-gpui";
+pub(crate) const CLIENT_CLASS: &str = "manager-gpui";
 
 #[derive(Deserialize)]
-struct Lock {
+pub(crate) struct Lock {
     format_version: u32,
     api_version: Version,
-    http_port: u16,
-    auth_token: String,
+    pub http_port: u16,
+    /// Broadcast/event socket the runtime exposes next to the HTTP API
+    /// (`ws_server`). Absent in pre-WS locks — serde default keeps them
+    /// readable; `subscribe` rejects `0`.
+    #[serde(default)]
+    pub ws_port: u16,
+    pub auth_token: String,
 }
 
 #[derive(Deserialize)]
@@ -29,15 +34,15 @@ impl Engine {
     /// POST /v1/rpc. Params merge with `operation`/`_req_id` like the
     /// Electron engine-client does.
     pub fn rpc(&self, operation: &str, mut params: Value) -> Result<Value, String> {
-        let (port, token) = self.lock()?;
+        let lock = self.lock()?;
         if !params.is_object() {
             return Err("Некорректный запрос Engine".into());
         }
         params["operation"] = json!(operation);
         params["_req_id"] = json!(uuid::Uuid::new_v4().to_string());
         let response = agent()
-            .post(&format!("http://127.0.0.1:{port}/v1/rpc"))
-            .set("Authorization", &format!("Bearer {token}"))
+            .post(&format!("http://127.0.0.1:{}/v1/rpc", lock.http_port))
+            .set("Authorization", &format!("Bearer {}", lock.auth_token))
             .set("X-Kosmos-Api-Version", "1.0.0")
             .set("X-Kosmos-Client-Class", CLIENT_CLASS)
             .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
@@ -52,10 +57,10 @@ impl Engine {
     /// GET /v1/health or /v1/info — plain status surfaces the Manager header
     /// uses for Engine reachability.
     pub fn status(&self, path: &str) -> Result<Value, String> {
-        let (port, token) = self.lock()?;
+        let lock = self.lock()?;
         let response = agent()
-            .get(&format!("http://127.0.0.1:{port}/v1/{path}"))
-            .set("Authorization", &format!("Bearer {token}"))
+            .get(&format!("http://127.0.0.1:{}/v1/{path}", lock.http_port))
+            .set("Authorization", &format!("Bearer {}", lock.auth_token))
             .set("X-Kosmos-Api-Version", "1.0.0")
             .set("X-Kosmos-Client-Class", CLIENT_CLASS)
             .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
@@ -73,7 +78,7 @@ impl Engine {
     }
 
     /// Engine discovery read on every call: Engine may have restarted.
-    fn lock(&self) -> Result<(u16, String), String> {
+    pub(crate) fn lock(&self) -> Result<Lock, String> {
         let directory = self.data_dir.clone().map(Ok).unwrap_or_else(data_dir)?;
         let bytes = std::fs::read(directory.join("engine.lock.json"))
             .map_err(|_| "Engine не запущен. Запустите Kosmos и обновите список.".to_string())?;
@@ -87,7 +92,7 @@ impl Engine {
         {
             return Err("Несовместимое состояние Engine. Обновите Kosmos.".into());
         }
-        Ok((lock.http_port, lock.auth_token))
+        Ok(lock)
     }
 }
 

@@ -7,6 +7,7 @@
 //! dependency specs must match every consumer exactly.
 
 pub mod engine;
+pub mod engine_ws;
 pub mod fields;
 pub mod theme;
 pub mod widgets;
