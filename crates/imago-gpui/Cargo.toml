@@ -12,3 +12,8 @@ gpui-component = "=0.6.2"
 # gpui-base 0.6.5+ (inspector API). Keep this in sync with consumers'
 # resolved version; it constrains their lockfile via unification.
 gpui-base = "=0.6.4"
+
+[dev-dependencies]
+# Test-window APIs (`TestAppContext`, `#[gpui::test]`, Element::write_a11y_info
+# probes) live behind gpui's test-support feature.
+gpui = { package = "gpui-kit", version = "=0.6.2", features = ["test-support"] }

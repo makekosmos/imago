@@ -5,6 +5,7 @@ const files = execFileSync("git", ["ls-files"], { encoding: "utf8" }).trim().spl
   .filter((file) => !file.startsWith("bun.lock"));
 for (const file of files) {
   let source; try { source = readFileSync(file, "utf8"); } catch { continue; }
+  if (source.includes("\0")) continue;
   if (/[ \t]+$/m.test(source)) throw new Error(`trailing whitespace: ${file}`);
   if (!source.endsWith("\n")) throw new Error(`missing final newline: ${file}`);
   if (mode === "--lint" && /(^|\n)\s*debugger\s*;/.test(source)) throw new Error(`debugger statement: ${file}`);
