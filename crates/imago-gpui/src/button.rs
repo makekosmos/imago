@@ -11,6 +11,12 @@
 //! The variant *colors* are the shared palette installed by
 //! `theme::apply` — these helpers only own the variant choice, so buttons
 //! look identical across GPUI apps without each app re-deriving it.
+//!
+//! Accessibility: `gpui-component::Button` always emits
+//! `Role::Button`/`Role::Link` and names itself from `.label(...)`, so a
+//! labeled button needs no extra wiring. Icon-only buttons (no visible
+//! text) must carry `.accessibility_label(<Russian name>)` — they have no
+//! label to derive from.
 
 use gpui::ElementId;
 use gpui_component::button::{Button, ButtonVariants};
