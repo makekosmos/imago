@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from "vue";
+import { onBeforeUnmount, useId, watch } from "vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 
 interface Props {
   open: boolean;
@@ -23,27 +24,42 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const titleId = `kosmos-modal-title-${useId()}`;
+const escapeToken = useEscapeLayer(() => props.open);
+
 function onKey(e: KeyboardEvent) {
-  if (e.key === "Escape" && props.open) emit("close");
+  if (e.key !== "Escape" || !props.open) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  e.preventDefault();
+  emit("close");
 }
 
 watch(
   () => props.open,
   (open) => {
+    // immediate: модалка, открытая уже на маунте (v-if), тоже держит
+    // escape-токен — без слушателя она глушила бы Escape для всех слоёв
+    // ниже. document недоступен при SSR — тогда слушатели не нужны.
+    if (typeof document === "undefined") return;
     if (open) {
-      document.addEventListener("keydown", onKey);
+      document.addEventListener("keydown", onKey, true);
     } else {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
     }
   },
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onKey);
+  document.removeEventListener("keydown", onKey, true);
 });
 
 function onBackdropPointerDown(e: PointerEvent) {
   if (!props.closeOnBackdrop) return;
+  if (e.button !== 0) return;
+  // Не закрываемся по backdrop, пока над модалкой есть overlay
+  // (dropdown, контекст-меню) — клик должен dismiss'ить только его.
+  if (!isTopEscapeLayer(escapeToken.value)) return;
   if (e.target === e.currentTarget) emit("close");
 }
 </script>
@@ -61,7 +77,7 @@ function onBackdropPointerDown(e: PointerEvent) {
           class="kosmos-modal__panel modal__part-2"
           role="dialog"
           aria-modal="true"
-          :aria-labelledby="props.title ? 'kosmos-modal-title' : undefined"
+          :aria-labelledby="props.title ? titleId : undefined"
           :style="{ width: props.width ?? 'min(440px, 92vw)' }"
         >
           <header
@@ -70,7 +86,7 @@ function onBackdropPointerDown(e: PointerEvent) {
           >
             <slot name="header">
               <h2
-                id="kosmos-modal-title"
+                :id="titleId"
                 class="modal__part-4"
               >
                 {{ props.title }}

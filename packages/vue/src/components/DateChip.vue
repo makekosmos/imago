@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from "vue";
 import { Calendar as CalendarIcon, X } from "@lucide/vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 import Calendar from "./Calendar.vue";
 
 interface Props {
@@ -74,18 +75,23 @@ function onDocPointerDown(e: PointerEvent) {
   open.value = false;
 }
 
+const escapeToken = useEscapeLayer(open);
+
 function onDocKeyDown(e: KeyboardEvent) {
-  if (e.key === "Escape" && open.value) open.value = false;
+  if (e.key !== "Escape" || !open.value) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  e.preventDefault();
+  open.value = false;
 }
 
 onMounted(() => {
   document.addEventListener("pointerdown", onDocPointerDown);
-  document.addEventListener("keydown", onDocKeyDown);
+  document.addEventListener("keydown", onDocKeyDown, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("pointerdown", onDocPointerDown);
-  document.removeEventListener("keydown", onDocKeyDown);
+  document.removeEventListener("keydown", onDocKeyDown, true);
 });
 </script>
 

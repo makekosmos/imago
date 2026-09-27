@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 import type { StatusDotTone } from "./types";
 
 interface Props {
@@ -55,20 +56,23 @@ function handleDocumentPointerDown(event: PointerEvent) {
   close();
 }
 
+const escapeToken = useEscapeLayer(open);
+
 function handleDocumentKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape") {
-    close();
-  }
+  if (event.key !== "Escape" || !open.value) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  event.preventDefault();
+  close();
 }
 
 onMounted(() => {
   document.addEventListener("pointerdown", handleDocumentPointerDown);
-  document.addEventListener("keydown", handleDocumentKeydown);
+  document.addEventListener("keydown", handleDocumentKeydown, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("pointerdown", handleDocumentPointerDown);
-  document.removeEventListener("keydown", handleDocumentKeydown);
+  document.removeEventListener("keydown", handleDocumentKeydown, true);
 });
 </script>
 

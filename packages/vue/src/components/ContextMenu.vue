@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, nextTick } from "vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 
 /**
  * Контекст-меню (ПКМ-меню) для desktop-приложений Kosmos.
@@ -71,26 +72,36 @@ function onDocumentPointerDown(e: PointerEvent) {
   emit("close");
 }
 
+const escapeToken = useEscapeLayer(() => props.open);
+
 function onDocumentKey(e: KeyboardEvent) {
-  if (e.key === "Escape" && props.open) emit("close");
+  if (e.key !== "Escape" || !props.open) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  e.preventDefault();
+  emit("close");
 }
 
 watch(
   () => props.open,
   (isOpen) => {
+    // immediate: меню, открытое уже на маунте, держит escape-токен —
+    // без слушателей оно заглушало бы Escape у слоёв ниже.
+    // document недоступен при SSR — тогда слушатели не нужны.
+    if (typeof document === "undefined") return;
     if (isOpen) {
       document.addEventListener("pointerdown", onDocumentPointerDown);
-      document.addEventListener("keydown", onDocumentKey);
+      document.addEventListener("keydown", onDocumentKey, true);
     } else {
       document.removeEventListener("pointerdown", onDocumentPointerDown);
-      document.removeEventListener("keydown", onDocumentKey);
+      document.removeEventListener("keydown", onDocumentKey, true);
     }
   },
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocumentPointerDown);
-  document.removeEventListener("keydown", onDocumentKey);
+  document.removeEventListener("keydown", onDocumentKey, true);
 });
 </script>
 
