@@ -200,7 +200,7 @@ function beginDrag(cx: number, cy: number) {
   clone = copiedRow;
   clone.dataset.dragClone = "";
   Object.assign(clone.style, {
-    position: "todo-row__copied-row",
+    position: "fixed",
     top: `${rect.top}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,

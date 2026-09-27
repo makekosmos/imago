@@ -9,6 +9,11 @@ for (const file of files) {
   if (/[ \t]+$/m.test(source)) throw new Error(`trailing whitespace: ${file}`);
   if (!source.endsWith("\n")) throw new Error(`missing final newline: ${file}`);
   if (mode === "--lint" && /(^|\n)\s*debugger\s*;/.test(source)) throw new Error(`debugger statement: ${file}`);
+  if (mode === "--lint" && /\.(?:vue|tsx?|mjs)$/.test(file)) {
+    for (const match of source.matchAll(/\b(?:add|remove)EventListener\(\s*["'`]([^"'`]+)["'`]/g)) {
+      if (!/^[a-z][a-z0-9.:-]*$/.test(match[1])) throw new Error(`invalid event name "${match[1]}": ${file}`);
+    }
+  }
 }
 for (const file of ["package.json"]) {
   if (file.endsWith(".json")) JSON.parse(readFileSync(file, "utf8"));
