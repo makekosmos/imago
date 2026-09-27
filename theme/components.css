@@ -326,7 +326,9 @@
 .context-menu__root{position:fixed}
 .context-menu__root{z-index:9999}
 .context-menu__root{min-width:calc(var(--spacing) * 44)}
+.context-menu__root{max-width:calc(100vw - 16px)}
 .context-menu__root{max-height:calc(100vh - 16px)}
+.context-menu__root{overflow-x:auto}
 .context-menu__root{overflow-y:auto}
 .context-menu__root{border-radius:var(--radius-lg)}
 .context-menu__root{border-style:var(--imago-border-style);border-width:1px}
@@ -2248,7 +2250,7 @@
   color: var(--accent);
 }
 
-.calendar-day:hover,
+.calendar-day:not(:disabled):hover,
 .calendar-day:focus-visible {
   background: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
