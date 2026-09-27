@@ -245,6 +245,17 @@ function onKey(e: KeyboardEvent) {
     return;
   }
   if (e.key === "Enter") {
+    // Tab может перенести фокус на саму кнопку опции: её Enter — нативный
+    // click, который выбирает именно её. Перехват выбирал бы highlighted
+    // (другой) пункт, а preventDefault ещё и глушил этот click.
+    const target = e.target;
+    if (
+      target instanceof Element &&
+      panelRef.value?.contains(target) &&
+      target.closest(".kosmos-dd__option") !== null
+    ) {
+      return;
+    }
     e.preventDefault();
     const opt = opts[highlightIdx.value];
     if (isSelectableOption(opt)) pick(opt);
