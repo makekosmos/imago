@@ -107,7 +107,7 @@ const cells = computed<DayCell[]>(() => {
   const out: DayCell[] = [];
   const todayIso = toIso(todayDate.value);
   const selectedIso = selectedDate.value ? toIso(selectedDate.value) : null;
-  const first = new Date(viewMonth.value.getFullYear(), viewMonth.value.getMonth(), 1);
+  const first = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth(), 1);
   const jsDow = first.getDay();
   const mondayOffset = (jsDow + 6) % 7;
   const gridStart = new Date(first);

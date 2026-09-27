@@ -13,6 +13,12 @@ for (const file of files) {
     for (const match of source.matchAll(/\b(?:add|remove)EventListener\(\s*["'`]([^"'`]+)["'`]/g)) {
       if (!/^[a-z][a-z0-9.:-]*$/.test(match[1])) throw new Error(`invalid event name "${match[1]}": ${file}`);
     }
+    // Pointer drag sessions must handle pointercancel: without it, a gesture
+    // aborted by the browser (touch-scroll takeover, OS drag) leaks the
+    // document-level pointermove listener and leaves drag artifacts behind.
+    if (/addEventListener\(\s*["'`]pointermove["'`]/.test(source) && !/["'`]pointercancel["'`]/.test(source)) {
+      throw new Error(`pointermove drag session without pointercancel handler: ${file}`);
+    }
   }
 }
 for (const file of ["package.json"]) {

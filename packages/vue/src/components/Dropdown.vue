@@ -118,7 +118,16 @@ function reposition() {
   if (!trigger || !panel) return;
   const rect = trigger.getBoundingClientRect();
   const panelH = panel.offsetHeight;
-  const panelW = panel.offsetWidth;
+  // При matchTriggerWidth финальная ширина панели задаётся привязкой
+  // `width: panelPosition.width` — которая ещё держит прежнее значение
+  // (на первом открытии `0px`, зажатое CSS `min-width`). `offsetWidth`
+  // в этот момент занижен; считаем ширину, к которой панель придёт.
+  const styles = getComputedStyle(panel);
+  const minW = parseFloat(styles.minWidth) || 0;
+  const maxW = parseFloat(styles.maxWidth) || Number.POSITIVE_INFINITY;
+  const panelW = props.matchTriggerWidth
+    ? Math.min(Math.max(rect.width, minW), maxW)
+    : panel.offsetWidth;
   const margin = 4;
   const edgePad = 8;
 
@@ -127,7 +136,10 @@ function reposition() {
   const spaceAbove = rect.top - margin;
   let top: number;
   if (spaceBelow >= spaceAbove) {
-    top = rect.bottom + margin;
+    top = Math.min(
+      rect.bottom + margin,
+      Math.max(edgePad, window.innerHeight - panelH - edgePad),
+    );
   } else {
     top = Math.max(rect.top - panelH - margin, edgePad);
   }

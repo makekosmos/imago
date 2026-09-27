@@ -44,11 +44,27 @@ const subtitle = computed(() => {
 
 const previewLines = computed(() => props.domains.slice(0, 12));
 
-function onClick() {
+// Вложенные интерактивные контролы (кнопки из slot `actions` и т.п.) не
+// должны дублировать активацию карточки: их click/Enter/Space всплывают до
+// контейнера с role="button" и иначе emit'ят лишний `click` поверх своего.
+const INNER_INTERACTIVE =
+  "a[href], button, input, select, textarea, summary, " +
+  "[role='link'], [role='menuitem'], [role='checkbox'], [role='switch'], " +
+  "[role='tab'], [role='option'], [contenteditable]:not([contenteditable='false'])";
+
+function isFromInnerControl(e: Event): boolean {
+  if (!(e.target instanceof Element) || e.target === e.currentTarget) return false;
+  const hit = e.target.closest(INNER_INTERACTIVE);
+  return Boolean(hit && hit !== e.currentTarget);
+}
+
+function onClick(e: MouseEvent) {
+  if (isFromInnerControl(e)) return;
   emit("click");
 }
 
 function onKey(e: KeyboardEvent) {
+  if (isFromInnerControl(e)) return;
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
     emit("click");
