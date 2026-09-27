@@ -252,12 +252,19 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
-// При фильтрации сбрасываем highlight на первую видимую опцию.
-watch(searchQuery, () => {
-  if (filteredOptions.value.length === 0) {
+// При фильтрации сбрасываем highlight на первую видимую опцию. На пустом
+// запросе (в т.ч. при reset при повторном открытии — watcher срабатывает
+// уже после того как toggle() выставил выбранный элемент) держим
+// highlight на текущем selected, иначе Enter выбирал бы первый пункт.
+watch(searchQuery, (query) => {
+  const list = filteredOptions.value;
+  if (list.length === 0) {
     highlightIdx.value = -1;
+  } else if (!query.trim()) {
+    const selected = list.findIndex((o) => o.value === props.modelValue && isSelectableOption(o));
+    highlightIdx.value = selected >= 0 ? selected : list.findIndex(isSelectableOption);
   } else {
-    highlightIdx.value = filteredOptions.value.findIndex(isSelectableOption);
+    highlightIdx.value = list.findIndex(isSelectableOption);
   }
   scrollHighlightedOptionIntoView();
   nextTick(updateOptionsOverflow);
