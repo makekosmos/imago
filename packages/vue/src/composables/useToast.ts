@@ -10,6 +10,8 @@ export interface ToastOptions {
   /** Auto-dismiss timeout в ms. По умолчанию 2000. */
   duration?: number;
   loading?: boolean;
+  /** Determinate progress 0–100 — renders a progressbar instead of the indeterminate loading bar. */
+  progress?: number;
   closable?: boolean;
 }
 
@@ -21,6 +23,7 @@ export interface ToastItem {
   tone: ToastTone;
   duration: number;
   loading: boolean;
+  progress?: number;
   closable: boolean;
 }
 
@@ -78,6 +81,7 @@ export function provideToastHost() {
       tone: opts.tone ?? "info",
       duration: opts.duration ?? 2000,
       loading: opts.loading ?? false,
+      progress: opts.progress,
       closable: opts.closable ?? false,
     };
     const next = [...items.value, item];
@@ -97,6 +101,7 @@ export function provideToastHost() {
             tone: patch.tone ?? item.tone,
             duration: patch.duration ?? item.duration,
             loading: patch.loading ?? item.loading,
+            progress: patch.progress ?? item.progress,
             closable: patch.closable ?? item.closable,
           }
         : item,
