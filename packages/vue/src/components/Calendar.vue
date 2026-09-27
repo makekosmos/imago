@@ -63,19 +63,31 @@ const todayDate = computed(() => {
 });
 
 const selectedDate = computed(() => parseIso(props.value));
+
+// Якорь месяца — существующая дата внутри него (viewMonth никогда не
+// хранит Invalid Date). У нижней границы диапазона (апрель -271821) 1-е
+// число не существует — якоримся на последний день месяца. null — если
+// месяц целиком вне диапазона Date.
+function monthAnchor(year: number, month: number): Date | null {
+  const first = localDate(year, month, 1);
+  if (!Number.isNaN(first.getTime())) return first;
+  const last = localDate(year, month + 1, 0);
+  return Number.isNaN(last.getTime()) ? null : last;
+}
+
 const viewMonth = ref<Date>(
-  localDate(
+  monthAnchor(
     (selectedDate.value ?? todayDate.value).getFullYear(),
     (selectedDate.value ?? todayDate.value).getMonth(),
-    1,
-  ),
+  ) ?? todayDate.value,
 );
 
 watch(
   () => props.value,
   (iso) => {
     const d = parseIso(iso);
-    if (d) viewMonth.value = localDate(d.getFullYear(), d.getMonth(), 1);
+    const anchor = d && monthAnchor(d.getFullYear(), d.getMonth());
+    if (anchor) viewMonth.value = anchor;
   },
 );
 
@@ -110,9 +122,10 @@ const cells = computed<DayCell[]>(() => {
   const selectedIso = selectedDate.value ? toIso(selectedDate.value) : null;
   const year = viewMonth.value.getFullYear();
   const month = viewMonth.value.getMonth();
-  const first = localDate(year, month, 1);
-  const jsDow = first.getDay();
-  const mondayOffset = (jsDow + 6) % 7;
+  // День недели 1-го числа — от якоря: сама дата 1-го числа может не
+  // существовать (апрель -271821). getDay(): вс=0 → сдвигаем к пн=0.
+  const anchorDow = (viewMonth.value.getDay() + 6) % 7;
+  const mondayOffset = (((anchorDow - (viewMonth.value.getDate() - 1)) % 7) + 7) % 7;
 
   for (let i = 0; i < 42; i++) {
     // Каждая ячейка — отдельный localDate: переполнение дня решается внутри
@@ -138,23 +151,25 @@ const viewYear = computed(() => viewMonth.value.getFullYear());
 const viewMonthIndex = computed(() => viewMonth.value.getMonth());
 
 function shiftMonth(delta: number) {
-  const next = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + delta, 1);
-  // У границы диапазона Date соседний месяц — Invalid Date. Без проверки
-  // viewMonth уходил в NaN: сетка рисовала 42 "NaN"-ячейки, а setYear не
-  // мог вернуть календарь (isValidViewDate(year, NaN) === false всегда).
-  if (Number.isNaN(next.getTime())) return;
+  // У границы диапазона Date соседнего месяца может не быть вовсе — без
+  // проверки viewMonth уходил в NaN: сетка рисовала "NaN"-ячейки, а
+  // setYear не мог вернуть календарь. Частично валидный месяц (апрель
+  // -271821) якорится на последний существующий день.
+  const next = monthAnchor(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + delta);
+  if (!next) return;
   viewMonth.value = next;
 }
 
 function isValidViewDate(year: number, month: number): boolean {
-  return !Number.isNaN(localDate(year, month, 1).getTime());
+  return monthAnchor(year, month) !== null;
 }
 
 function setYear(rawYear: string | number) {
   const year = Number(rawYear);
   if (!Number.isInteger(year)) return;
-  if (!isValidViewDate(year, viewMonth.value.getMonth())) return;
-  viewMonth.value = localDate(year, viewMonth.value.getMonth(), 1);
+  const anchor = monthAnchor(year, viewMonth.value.getMonth());
+  if (!anchor) return;
+  viewMonth.value = anchor;
 }
 
 function createYearOption(query: string) {
@@ -229,6 +244,7 @@ function pickCell(c: DayCell) {
         type="button"
         class="calendar-day calendar__button"
         :disabled="!c.iso"
+        :aria-hidden="!c.iso"
         :class="{
           'calendar--is-is-outside-month': c.isOutsideMonth,
           'calendar--is-is-selected':
