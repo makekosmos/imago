@@ -54,8 +54,12 @@ watch(
     const { innerWidth, innerHeight } = window;
     const w = el.offsetWidth;
     const h = el.offsetHeight;
-    finalX.value = Math.min(props.x, innerWidth - w - 8);
-    finalY.value = Math.min(props.y, innerHeight - h - 8);
+    // Меню крупнее окна (или клик у самого края): без нижнего clamp'а
+    // innerW/H - w/h - 8 уходит в минус и меню рендерится за viewport'ом
+    // целиком. Прижимаем к краю с тем же 8px-отступом; высоту режет
+    // max-height + overflow-y в .context-menu__root.
+    finalX.value = Math.max(8, Math.min(props.x, innerWidth - w - 8));
+    finalY.value = Math.max(8, Math.min(props.y, innerHeight - h - 8));
   },
   { immediate: true },
 );

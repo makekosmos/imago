@@ -41,10 +41,20 @@ function parseIso(iso: string | null): Date | null {
   if (!iso) return null;
   const m = /^([+-]?\d{4,6})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
   // Год за пределами диапазона Date (±~275760) даёт Invalid Date — без
   // проверки NaN стекался в viewMonth/cells и вся сетка становилась "NaN".
-  const d = localDate(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return Number.isNaN(d.getTime()) ? null : d;
+  const d = localDate(year, month - 1, day);
+  if (Number.isNaN(d.getTime())) return null;
+  // Переполненные поля (месяц 13, 31 февраля) localDate молча сдвигает на
+  // другую реальную дату — календарь подсвечивал бы не то число, что лежит
+  // в value. Такое значение malformed → считаем его отсутствующим.
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+    return null;
+  }
+  return d;
 }
 
 const todayDate = computed(() => {
@@ -85,8 +95,10 @@ const yearOptions = computed(() => {
 
 interface DayCell {
   date: Date;
+  /** "" у ячеек за пределами диапазона Date — такие дни не существуют. */
   iso: string;
-  day: number;
+  /** null для несуществующих дней — ячейка рисуется пустой и не кликается. */
+  day: number | null;
   isToday: boolean;
   isSelected: boolean;
   isOutsideMonth: boolean;
@@ -96,23 +108,27 @@ const cells = computed<DayCell[]>(() => {
   const out: DayCell[] = [];
   const todayIso = toIso(todayDate.value);
   const selectedIso = selectedDate.value ? toIso(selectedDate.value) : null;
-  const first = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth(), 1);
+  const year = viewMonth.value.getFullYear();
+  const month = viewMonth.value.getMonth();
+  const first = localDate(year, month, 1);
   const jsDow = first.getDay();
   const mondayOffset = (jsDow + 6) % 7;
-  const gridStart = new Date(first);
-  gridStart.setDate(first.getDate() - mondayOffset);
 
   for (let i = 0; i < 42; i++) {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + i);
-    const iso = toIso(d);
+    // Каждая ячейка — отдельный localDate: переполнение дня решается внутри
+    // целевого месяца, а дни за пределами диапазона Date (последняя неделя
+    // сентября 275760, первая — апреля -271821) дают Invalid Date — их
+    // рендерим пустыми некликабельными ячейками, а не "NaN".
+    const d = localDate(year, month, 1 + i - mondayOffset);
+    const valid = !Number.isNaN(d.getTime());
+    const iso = valid ? toIso(d) : "";
     out.push({
       date: d,
       iso,
-      day: d.getDate(),
-      isToday: iso === todayIso,
-      isSelected: iso === selectedIso,
-      isOutsideMonth: d.getMonth() !== viewMonth.value.getMonth(),
+      day: valid ? d.getDate() : null,
+      isToday: valid && iso === todayIso,
+      isSelected: valid && iso === selectedIso,
+      isOutsideMonth: !valid || d.getMonth() !== month,
     });
   }
   return out;
@@ -122,7 +138,12 @@ const viewYear = computed(() => viewMonth.value.getFullYear());
 const viewMonthIndex = computed(() => viewMonth.value.getMonth());
 
 function shiftMonth(delta: number) {
-  viewMonth.value = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + delta, 1);
+  const next = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + delta, 1);
+  // У границы диапазона Date соседний месяц — Invalid Date. Без проверки
+  // viewMonth уходил в NaN: сетка рисовала 42 "NaN"-ячейки, а setYear не
+  // мог вернуть календарь (isValidViewDate(year, NaN) === false всегда).
+  if (Number.isNaN(next.getTime())) return;
+  viewMonth.value = next;
 }
 
 function isValidViewDate(year: number, month: number): boolean {
@@ -147,6 +168,7 @@ function createYearOption(query: string) {
 }
 
 function pickCell(c: DayCell) {
+  if (!c.iso) return; // пустая ячейка за пределами диапазона Date
   emit("update:value", c.iso);
   emit("pick", c.iso);
 }
@@ -202,10 +224,11 @@ function pickCell(c: DayCell) {
       </div>
 
       <button
-        v-for="c in cells"
-        :key="c.iso"
+        v-for="(c, i) in cells"
+        :key="c.iso || `empty-${i}`"
         type="button"
         class="calendar-day calendar__button"
+        :disabled="!c.iso"
         :class="{
           'calendar--is-is-outside-month': c.isOutsideMonth,
           'calendar--is-is-selected':

@@ -31,6 +31,9 @@ globalThis.window = {
   innerWidth: 1024,
   innerHeight: 768,
 };
+// DOM-классы для instanceof-проверок в обработчиках (Dropdown onKey и т.п.).
+globalThis.Element = class Element {};
+globalThis.Node = class Node {};
 
 // setup() вне экземпляра компонента даёт ожидаемое предупреждение про
 // lifecycle hooks — глушим только его, остальные warn'ы остаются видимыми.
@@ -96,6 +99,7 @@ try {
   compileVueModule("packages/vue/src/components/DateTimePicker.vue");
   compileVueModule("packages/vue/src/components/DateChip.vue");
   compileVueModule("packages/vue/src/components/HotkeyCapture.vue");
+  compileVueModule("packages/vue/src/components/ContextMenu.vue");
 
   const Calendar = (await import(pathToFileURL(join(dir, "Calendar.compiled.mjs")).href)).default;
   const DateTimePicker = (await import(pathToFileURL(join(dir, "DateTimePicker.compiled.mjs")).href)).default;
@@ -103,6 +107,7 @@ try {
   const TimeColumn = (await import(pathToFileURL(join(dir, "TimeColumn.compiled.mjs")).href)).default;
   const DateChip = (await import(pathToFileURL(join(dir, "DateChip.compiled.mjs")).href)).default;
   const HotkeyCapture = (await import(pathToFileURL(join(dir, "HotkeyCapture.compiled.mjs")).href)).default;
+  const ContextMenu = (await import(pathToFileURL(join(dir, "ContextMenu.compiled.mjs")).href)).default;
 
   // KOS-204 Calendar: value="2024-02-29" (високосный день) раньше открывал
   // календарь на МАРТЕ и подсвечивал 1 марта — parseIso/localDate собирали
@@ -259,6 +264,154 @@ try {
     assert.equal(bindings.viewMonth.value.getMonth(), 5, "invalid value falls back to today");
     assert.ok(bindings.cells.value.every((c) => Number.isFinite(c.day)));
     scope.stop();
+  }
+
+  // KOS-248 Calendar: ‹ › стрелки у границы диапазона Date. setYear и
+  // create-option отвергают out-of-range годы (KOS-221), но shiftMonth не
+  // проверял результат — переход за последний валидный месяц клал в
+  // viewMonth Invalid Date: 42 "NaN"-ячейки, и календарь зависал навсегда
+  // (setYear отклонял любой год — isValidViewDate(year, NaN) === false).
+  {
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "2024-01-15",
+      today: "2024-06-15",
+    });
+    // UI-путь: выбрать последний год, пока видимый месяц валиден для него,
+    // затем идти ">" через границу (последний валидный месяц — сентябрь).
+    bindings.setYear("275760");
+    await nextTick();
+    assert.equal(bindings.viewMonth.value.getFullYear(), 275760);
+    for (let i = 0; i < 12; i++) bindings.shiftMonth(1);
+    await nextTick();
+    assert.ok(
+      !Number.isNaN(bindings.viewMonth.value.getTime()),
+      "month nav at the Date-range edge never produces Invalid Date",
+    );
+    // Стоим на последнем месяце диапазона: часть дней недели не существует
+    // (после 13 сентября 275760) — они пустые, а не "NaN".
+    assert.ok(
+      bindings.cells.value.every((c) => !c.iso.includes("NaN") && (c.day === null || Number.isFinite(c.day))),
+      "boundary month renders blank cells instead of NaN",
+    );
+    assert.ok(
+      bindings.cells.value.some((c) => c.iso.startsWith("275760-09")),
+      "valid days of the boundary month are still rendered",
+    );
+    const pos = bindings.viewMonth.value.getFullYear() * 12 + bindings.viewMonth.value.getMonth();
+    bindings.shiftMonth(1);
+    const posAfter = bindings.viewMonth.value.getFullYear() * 12 + bindings.viewMonth.value.getMonth();
+    assert.equal(posAfter, pos, "shiftMonth past the last valid month is a no-op");
+    // И календарь остаётся живым: год можно переключить обратно.
+    bindings.setYear("2025");
+    await nextTick();
+    assert.equal(bindings.viewMonth.value.getFullYear(), 2025, "year switch still works");
+    scope.stop();
+  }
+
+  // KOS-248 Calendar: переполненные поля в value ("2024-13-10", "2024-02-31")
+  // localDate молча сдвигал на другую реальную дату — календарь открывал
+  // другой месяц и подсвечивал не то число, что записано в prop'е. Теперь
+  // malformed-поля эквивалентны отсутствию value (как в DateChip).
+  {
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "2024-13-10",
+      today: "2024-06-15",
+    });
+    assert.equal(bindings.viewMonth.value.getFullYear(), 2024);
+    assert.equal(bindings.viewMonth.value.getMonth(), 5, "malformed month falls back to today");
+    assert.ok(
+      bindings.cells.value.every((c) => !c.isSelected),
+      "malformed value selects no phantom day",
+    );
+    scope.stop();
+  }
+  {
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "2024-02-31",
+      today: "2024-06-15",
+    });
+    assert.ok(
+      bindings.cells.value.every((c) => !c.isSelected),
+      "Feb 31 is not silently re-selected as Mar 2",
+    );
+    scope.stop();
+  }
+
+  // KOS-248 Dropdown: Tab внутрь списка ставит фокус на кнопку опции; Enter
+  // на ней — её нативный click. Перехват выбирал highlighted (другой) пункт
+  // и глушил правильный click через preventDefault.
+  {
+    const options = [
+      { value: "a", label: "Apple" },
+      { value: "b", label: "Banana" },
+      { value: "c", label: "Cherry" },
+    ];
+    const { scope, bindings, emitted } = runSetup(Dropdown, {
+      modelValue: "a",
+      options,
+      searchable: false,
+    });
+    bindings.toggle();
+    await nextTick();
+    // Фокус на опции "c" внутри панели (highlight при этом остаётся на "a").
+    const optionEl = new Element();
+    optionEl.closest = (sel) => (sel === ".kosmos-dd__option" ? optionEl : null);
+    bindings.panelRef.value = { contains: (t) => t === optionEl };
+    let prevented = false;
+    bindings.onKey({
+      key: "Enter",
+      defaultPrevented: false,
+      target: optionEl,
+      preventDefault() {
+        prevented = true;
+      },
+    });
+    assert.equal(
+      emitted.filter(([name]) => name === "update:modelValue").length,
+      0,
+      "Enter on a focused option is left to its native click",
+    );
+    assert.equal(prevented, false, "the focused option's click is not suppressed");
+
+    // Enter при фокусе вне опций (search input, триггер) — по-прежнему
+    // выбирает highlighted пункт.
+    bindings.searchQuery.value = "";
+    await nextTick();
+    bindings.onKey({
+      key: "Enter",
+      defaultPrevented: false,
+      target: new Element(),
+      preventDefault() {},
+    });
+    const picked = emitted.filter(([name]) => name === "update:modelValue").map(([, v]) => v);
+    assert.deepEqual(picked, ["a"], "Enter without option focus still picks the highlight");
+    scope.stop();
+  }
+
+  // KOS-248 ContextMenu: меню крупнее окна — Math.min давал отрицательные
+  // top/left (innerW - w - 8 < 0) и меню рендерилось за экраном целиком.
+  // Clamp прижимает позицию к краю с тем же 8px отступом.
+  {
+    window.innerWidth = 300;
+    window.innerHeight = 200;
+    const { scope, bindings } = runSetup(ContextMenu, { open: true, x: 250, y: 150 });
+    // Только root нужен watch'у — он читает его после nextTick.
+    bindings.root.value = { offsetWidth: 400, offsetHeight: 500, contains: () => false };
+    await nextTick();
+    await nextTick();
+    assert.equal(bindings.finalX.value, 8, "menu wider than the window is clamped to the edge");
+    assert.equal(bindings.finalY.value, 8, "menu taller than the window is clamped to the edge");
+    scope.stop();
+
+    window.innerWidth = 1024;
+    window.innerHeight = 768;
+    const { scope: s2, bindings: b2 } = runSetup(ContextMenu, { open: true, x: 900, y: 700 });
+    b2.root.value = { offsetWidth: 200, offsetHeight: 300, contains: () => false };
+    await nextTick();
+    await nextTick();
+    assert.equal(b2.finalX.value, 1024 - 200 - 8, "normal case still right-clamps");
+    assert.equal(b2.finalY.value, 768 - 300 - 8, "normal case still bottom-clamps");
+    s2.stop();
   }
 
   // KOS-221 DateChip: label для malformed ISO-значения. Месяц "13" раньше
