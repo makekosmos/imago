@@ -40,17 +40,19 @@ impl Engine {
         }
         params["operation"] = json!(operation);
         params["_req_id"] = json!(uuid::Uuid::new_v4().to_string());
-        let response = agent()
-            .post(&format!("http://127.0.0.1:{}/v1/rpc", lock.http_port))
-            .set("Authorization", &format!("Bearer {}", lock.auth_token))
-            .set("X-Kosmos-Api-Version", "1.0.0")
-            .set("X-Kosmos-Client-Class", CLIENT_CLASS)
-            .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
-            .set("X-Kosmos-Client-Pid", &std::process::id().to_string())
-            .send_json(params)
-            .map_err(|_| {
-                "Нет подтверждения от Engine. Обновите список перед повтором.".to_string()
-            })?;
+        let response = or_status_body(
+            agent()
+                .post(&format!("http://127.0.0.1:{}/v1/rpc", lock.http_port))
+                .set("Authorization", &format!("Bearer {}", lock.auth_token))
+                .set("X-Kosmos-Api-Version", "1.0.0")
+                .set("X-Kosmos-Client-Class", CLIENT_CLASS)
+                .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
+                .set("X-Kosmos-Client-Pid", &std::process::id().to_string())
+                .send_json(params),
+        )
+        .ok_or_else(|| {
+            "Нет подтверждения от Engine. Обновите список перед повтором.".to_string()
+        })?;
         decode(response)
     }
 
@@ -58,15 +60,17 @@ impl Engine {
     /// uses for Engine reachability.
     pub fn status(&self, path: &str) -> Result<Value, String> {
         let lock = self.lock()?;
-        let response = agent()
-            .get(&format!("http://127.0.0.1:{}/v1/{path}", lock.http_port))
-            .set("Authorization", &format!("Bearer {}", lock.auth_token))
-            .set("X-Kosmos-Api-Version", "1.0.0")
-            .set("X-Kosmos-Client-Class", CLIENT_CLASS)
-            .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
-            .set("X-Kosmos-Client-Pid", &std::process::id().to_string())
-            .call()
-            .map_err(|_| "Нет подтверждения от Engine. Обновите список.".to_string())?;
+        let response = or_status_body(
+            agent()
+                .get(&format!("http://127.0.0.1:{}/v1/{path}", lock.http_port))
+                .set("Authorization", &format!("Bearer {}", lock.auth_token))
+                .set("X-Kosmos-Api-Version", "1.0.0")
+                .set("X-Kosmos-Client-Class", CLIENT_CLASS)
+                .set("X-Kosmos-Client-Version", env!("CARGO_PKG_VERSION"))
+                .set("X-Kosmos-Client-Pid", &std::process::id().to_string())
+                .call(),
+        )
+        .ok_or_else(|| "Нет подтверждения от Engine. Обновите список.".to_string())?;
         // Status endpoints answer `{"ok":true,...}` without a `data` envelope.
         let value: Value = response
             .into_json()
@@ -93,6 +97,16 @@ impl Engine {
             return Err("Несовместимое состояние Engine. Обновите Kosmos.".into());
         }
         Ok(lock)
+    }
+}
+
+/// A non-2xx status still carries Engine's `{"ok":false,"error":...}` body —
+/// keep the response so `decode` surfaces the real rejection instead of
+/// reporting the Engine as unreachable. `None` is a transport-level failure.
+fn or_status_body(result: Result<ureq::Response, ureq::Error>) -> Option<ureq::Response> {
+    match result {
+        Ok(response) | Err(ureq::Error::Status(_, response)) => Some(response),
+        Err(_) => None,
     }
 }
 
@@ -209,4 +223,74 @@ pub fn open_url(url: &str) -> Result<(), String> {
         return Err("Недопустимый URL".into());
     }
     open_path(std::path::Path::new(url))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+
+    fn engine_with_lock(dir: &std::path::Path, http_port: u16) -> Engine {
+        std::fs::create_dir_all(dir).unwrap();
+        let lock = json!({
+            "format_version": 1,
+            "api_version": {"major": 1},
+            "http_port": http_port,
+            "auth_token": "a".repeat(64),
+        });
+        std::fs::write(dir.join("engine.lock.json"), lock.to_string()).unwrap();
+        Engine {
+            data_dir: Some(dir.to_path_buf()),
+        }
+    }
+
+    /// One-shot HTTP stub: accepts a single request, answers `status` +
+    /// `body`. Returns the bound port for the lock file.
+    fn serve_once(status: &str, body: &'static str) -> u16 {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let status = status.to_string();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut buf = [0u8; 8192];
+            let _ = stream.read(&mut buf);
+            let response = format!(
+                "{status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(response.as_bytes());
+        });
+        port
+    }
+
+    /// Engine rejecting an operation with a non-2xx status still answers
+    /// `{"ok":false,"error":...}` — the client must surface that rejection,
+    /// not report the Engine as unreachable.
+    #[test]
+    fn rpc_decodes_engine_error_on_http_error_status() {
+        let dir = std::env::temp_dir().join(format!("kgk-rpc-{}", std::process::id()));
+        let port = serve_once(
+            "HTTP/1.1 401 Unauthorized",
+            r#"{"ok":false,"error":"bad token"}"#,
+        );
+        let engine = engine_with_lock(&dir, port);
+        let error = engine.rpc("demo.op", json!({})).unwrap_err();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(error, "Engine отклонил операцию: bad token");
+    }
+
+    #[test]
+    fn status_decodes_engine_error_on_http_error_status() {
+        let dir = std::env::temp_dir().join(format!("kgk-status-{}", std::process::id()));
+        let port = serve_once(
+            "HTTP/1.1 503 Service Unavailable",
+            r#"{"ok":false,"error":"booting"}"#,
+        );
+        let engine = engine_with_lock(&dir, port);
+        let error = engine.status("health").unwrap_err();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(error, "Engine отклонил запрос состояния");
+    }
 }
