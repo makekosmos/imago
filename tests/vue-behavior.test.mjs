@@ -308,6 +308,44 @@ try {
     scope.stop();
   }
 
+  // KOS-248 Calendar: нижняя граница диапазона — value="-271821-04-25":
+  // дата валидна, но 1 апреля -271821 ещё не существует. Раньше viewMonth
+  // становился Invalid Date через тот же NaN-канал, что и shiftMonth.
+  // Теперь месяц якорится на последний существующий день: сетка показывает
+  // существующие апрельские дни, несуществующие — пустые ячейки.
+  {
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "-271821-04-25",
+      today: "2024-06-15",
+    });
+    assert.ok(!Number.isNaN(bindings.viewMonth.value.getTime()), "viewMonth stays a real Date");
+    assert.equal(bindings.viewMonth.value.getMonth(), 3, "partial first month still shows April");
+    assert.ok(
+      bindings.cells.value.every((c) => !c.iso.includes("NaN")),
+      "no NaN cells at the lower boundary",
+    );
+    assert.ok(
+      bindings.cells.value.some((c) => c.day === null),
+      "days before the epoch minimum render as blank cells",
+    );
+    assert.ok(
+      bindings.cells.value.some((c) => c.iso.startsWith("-271821-04")),
+      "existing April days render",
+    );
+    assert.ok(
+      bindings.cells.value.some((c) => c.iso === "-271821-04-25" && c.isSelected),
+      "the selected boundary day is highlighted",
+    );
+    // Март -271821 целиком вне диапазона — назад не идём, вперёд можно.
+    bindings.shiftMonth(-1);
+    assert.equal(bindings.viewMonth.value.getMonth(), 3, "fully-invalid month is skipped");
+    bindings.shiftMonth(1);
+    assert.equal(bindings.viewMonth.value.getMonth(), 4, "forward nav works from the boundary");
+    bindings.setYear("2025");
+    assert.equal(bindings.viewMonth.value.getFullYear(), 2025, "recovery by year works");
+    scope.stop();
+  }
+
   // KOS-248 Calendar: переполненные поля в value ("2024-13-10", "2024-02-31")
   // localDate молча сдвигал на другую реальную дату — календарь открывал
   // другой месяц и подсвечивал не то число, что записано в prop'е. Теперь
@@ -356,7 +394,7 @@ try {
     // Фокус на опции "c" внутри панели (highlight при этом остаётся на "a").
     const optionEl = new Element();
     optionEl.closest = (sel) => (sel === ".kosmos-dd__option" ? optionEl : null);
-    bindings.panelRef.value = { contains: (t) => t === optionEl };
+    bindings.panelRef.value = { contains: (t) => t === optionEl, querySelector: () => null };
     let prevented = false;
     bindings.onKey({
       key: "Enter",
@@ -373,18 +411,29 @@ try {
     );
     assert.equal(prevented, false, "the focused option's click is not suppressed");
 
-    // Enter при фокусе вне опций (search input, триггер) — по-прежнему
-    // выбирает highlighted пункт.
-    bindings.searchQuery.value = "";
-    await nextTick();
+    // Enter при фокусе вне опций — по-прежнему выбирает highlighted пункт.
+    // Две формы: цель вне панели (триггер) и внутри панели, но не на опции
+    // (search input) — guard срабатывает только на самих кнопках опций.
+    // pick() закрывает панель — перед каждой ногой открываем заново.
     bindings.onKey({
       key: "Enter",
       defaultPrevented: false,
       target: new Element(),
       preventDefault() {},
     });
+    bindings.toggle();
+    await nextTick();
+    const searchEl = new Element();
+    searchEl.closest = () => null; // внутри панели, но не .kosmos-dd__option
+    bindings.panelRef.value = { contains: () => true, querySelector: () => null };
+    bindings.onKey({
+      key: "Enter",
+      defaultPrevented: false,
+      target: searchEl,
+      preventDefault() {},
+    });
     const picked = emitted.filter(([name]) => name === "update:modelValue").map(([, v]) => v);
-    assert.deepEqual(picked, ["a"], "Enter without option focus still picks the highlight");
+    assert.deepEqual(picked, ["a", "a"], "Enter without option focus still picks the highlight");
     scope.stop();
   }
 

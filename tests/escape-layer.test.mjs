@@ -105,6 +105,31 @@ try {
     assert.equal(isTopEscapeLayer(first), false, "stale token not top after dispose");
   }
 
+  // KOS-248: close→open внутри одного flush'а (pick() → open=false и
+  // toggle() → open=true синхронно). Vue 3.6 выполняет watcher cleanups на
+  // каждом запуске эффекта — даже когда cb отброшен дедупликацией — и
+  // старый код снимал слой без восстановления: переоткрытый overlay
+  // оставался без токена → isTopEscapeLayer=false → Escape/клавиши мёртвы.
+  {
+    const open = ref(false);
+    const scope = effectScope();
+    const token = scope.run(() => useEscapeLayer(open));
+    open.value = true;
+    await tick();
+    assert.equal(isTopEscapeLayer(token.value), true);
+    // Без await между close и open — дедуплицированный переход.
+    open.value = false;
+    open.value = true;
+    await tick();
+    assert.notEqual(token.value, null, "token survives a deduped close→open");
+    assert.equal(isTopEscapeLayer(token.value), true, "reopened overlay keeps its layer");
+    // И реальное закрытие после этого по-прежнему снимает слой.
+    open.value = false;
+    await tick();
+    assert.equal(token.value, null, "a real close still releases the token");
+    scope.stop();
+  }
+
   console.log("escape-layer tests passed");
 } finally {
   rmSync(dir, { recursive: true, force: true });
