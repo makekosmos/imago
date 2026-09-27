@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
+import { formatIsoYear, localDate, pad } from "./dates";
 import Dropdown from "./Dropdown.vue";
 
 interface Props {
@@ -31,21 +32,6 @@ const RU_MONTHS_LOWER = [
   "ноябрь",
   "декабрь",
 ] as const;
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function formatIsoYear(year: number): string {
-  if (year < 0) return `-${String(Math.abs(year)).padStart(6, "0")}`;
-  return String(year).padStart(4, "0");
-}
-
-function localDate(year: number, month: number, day: number): Date {
-  const d = new Date(0, month, day);
-  d.setFullYear(year);
-  return d;
-}
 
 function toIso(d: Date): string {
   return `${formatIsoYear(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

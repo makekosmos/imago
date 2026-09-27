@@ -24,9 +24,18 @@ const emit = defineEmits<{
   "update:value": [v: number];
 }>();
 
+// Лимит на размер колонки: step<=0 / нефинитные границы / микроскопический
+// step на большом диапазоне иначе дают бесконечный цикл и падение
+// процесса по invalid array size.
+const MAX_ITEMS = 10_000;
+
 const items = computed<number[]>(() => {
+  const { min, max, step } = props;
+  const valid =
+    Number.isFinite(min) && Number.isFinite(max) && Number.isFinite(step) && step > 0 && min <= max;
+  if (!valid) return Number.isFinite(props.value) ? [props.value] : [];
   const out: number[] = [];
-  for (let v = props.min; v <= props.max; v += props.step) out.push(v);
+  for (let v = min; v <= max && out.length < MAX_ITEMS; v += step) out.push(v);
   return out;
 });
 

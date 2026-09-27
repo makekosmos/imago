@@ -37,7 +37,7 @@
   "scripts": {
     "build": "node scripts/prepack-artifact.mjs --build",
     "prepack": "node scripts/prepack-artifact.mjs",
-    "test": "node tests/prepack-artifact.test.mjs && node tests/escape-layer.test.mjs",
+    "test": "node tests/prepack-artifact.test.mjs && node tests/escape-layer.test.mjs && node tests/dates.test.mjs && node tests/vue-behavior.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "node scripts/quality-check.mjs --lint",
     "format:check": "node scripts/quality-check.mjs --format",

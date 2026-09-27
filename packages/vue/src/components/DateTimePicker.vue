@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { Calendar as CalendarIcon } from "@lucide/vue";
 import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
+import { formatIsoYear, localDateTime, pad } from "./dates";
 import Calendar from "./Calendar.vue";
 
 interface Props {
@@ -46,23 +47,8 @@ const panelPosition = ref<{ top: number; left: number; placement: "below" | "abo
   placement: "below",
 });
 
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function formatIsoYear(year: number): string {
-  if (year < 0) return `-${String(Math.abs(year)).padStart(6, "0")}`;
-  return String(year).padStart(4, "0");
-}
-
 function formatDisplayYear(year: number): string {
   return year < 0 ? `${Math.abs(year)} до н.э.` : `${year} года`;
-}
-
-function localDateTime(s: DTState): Date {
-  const d = new Date(0, s.month, s.day, s.hour, s.minute, 0, 0);
-  d.setFullYear(s.year);
-  return d;
 }
 
 interface DTState {
@@ -245,7 +231,8 @@ function refDate(): Date | null {
 
 const displayLabel = computed(() => {
   if (!props.value) return props.placeholder;
-  const s = isoToLocal(props.value)!;
+  const s = isoToLocal(props.value);
+  if (!s) return props.placeholder;
   const time = `${pad(s.hour)}:${pad(s.minute)}`;
   const ref = refDate();
   if (props.dateOnly) {
