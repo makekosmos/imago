@@ -42,10 +42,15 @@ const RU_MONTHS_SHORT = [
 
 const label = computed(() => {
   if (!props.value) return props.placeholder;
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(props.value);
+  // Ширина года — как у Calendar.parseIso ([+-]?\d{4,6}): иначе валидные
+  // для календаря значения ("12024-05-10") показывались сырым ISO.
+  const m = /^([+-]?\d{4,6})-(\d{2})-(\d{2})/.exec(props.value);
   if (!m) return props.value;
-  const day = Number(m[3]);
   const month = RU_MONTHS_SHORT[Number(m[2]) - 1];
+  const day = Number(m[3]);
+  // Невалидный месяц/день (2024-13-05): без проверки месяц выходил
+  // undefined и в чипе рисовалось буквальное "5 undefined".
+  if (!month || day < 1 || day > 31) return props.value;
   return `${day} ${month}`;
 });
 

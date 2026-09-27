@@ -17,6 +17,7 @@
 
 import { computed, ref, watch } from "vue";
 import { useEscapeLayer } from "../composables/useEscapeLayer";
+import { usePlatform } from "../composables/usePlatform";
 
 const props = withDefaults(
   defineProps<{
@@ -48,11 +49,14 @@ useEscapeLayer(capturing);
 
 // На macOS модификаторы показываем нативными символами (⌘ ⌥ ⌃ ⇧), на остальных
 // платформах — текстом. Super/Meta = Command на macOS, Win на Windows.
-const isMac = /Mac/i.test(navigator.platform);
+// Источник — usePlatform() (data-platform от preload): navigator.platform
+// недоступен вне браузера (SSR/тесты → ReferenceError) и игнорирует
+// preload-маркер платформы.
+const { isMac } = usePlatform();
 
 const keyParts = computed(() => {
   if (!props.modelValue) return [];
-  const labels: Record<string, string> = isMac
+  const labels: Record<string, string> = isMac.value
     ? {
         Ctrl: "⌃",
         Control: "⌃",
@@ -71,11 +75,14 @@ const keyParts = computed(() => {
         Meta: "Win",
         Space: "Space",
       };
-  return props.modelValue
+  const parts = props.modelValue
     .split("+")
     .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => labels[part] ?? part);
+    .filter(Boolean);
+  // Accelerator с "+" как основной клавишей ("Ctrl++", "+") раньше терял её:
+  // split("+") схлопывает её в пустой хвост — восстанавливаем.
+  if (props.modelValue.endsWith("+")) parts.push("+");
+  return parts.map((part) => labels[part] ?? part);
 });
 
 function start() {
