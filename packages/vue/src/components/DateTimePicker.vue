@@ -332,12 +332,12 @@ watch(open, (isOpen) => {
   if (isOpen) {
     document.addEventListener("pointerdown", onDocPointerDown);
     document.addEventListener("keydown", onDocKey);
-    window.addEventListener("date-time-picker__part-23", onWindowResize);
+    window.addEventListener("resize", onWindowResize);
     window.addEventListener("scroll", onWindowResize, true);
   } else {
     document.removeEventListener("pointerdown", onDocPointerDown);
     document.removeEventListener("keydown", onDocKey);
-    window.removeEventListener("date-time-picker__part-27", onWindowResize);
+    window.removeEventListener("resize", onWindowResize);
     window.removeEventListener("scroll", onWindowResize, true);
   }
 });
@@ -345,7 +345,7 @@ watch(open, (isOpen) => {
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocPointerDown);
   document.removeEventListener("keydown", onDocKey);
-  window.removeEventListener("date-time-picker__part-31", onWindowResize);
+  window.removeEventListener("resize", onWindowResize);
   window.removeEventListener("scroll", onWindowResize, true);
 });
 </script>

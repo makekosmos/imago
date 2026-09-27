@@ -265,12 +265,12 @@ watch(open, (isOpen) => {
   if (isOpen) {
     document.addEventListener("pointerdown", onDocPointerDown);
     document.addEventListener("keydown", onKey);
-    window.addEventListener("dropdown__part-19", onWindowResize);
+    window.addEventListener("resize", onWindowResize);
     window.addEventListener("scroll", onWindowResize, true);
   } else {
     document.removeEventListener("pointerdown", onDocPointerDown);
     document.removeEventListener("keydown", onKey);
-    window.removeEventListener("dropdown__part-23", onWindowResize);
+    window.removeEventListener("resize", onWindowResize);
     window.removeEventListener("scroll", onWindowResize, true);
   }
 });
@@ -278,7 +278,7 @@ watch(open, (isOpen) => {
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocPointerDown);
   document.removeEventListener("keydown", onKey);
-  window.removeEventListener("dropdown__part-27", onWindowResize);
+  window.removeEventListener("resize", onWindowResize);
   window.removeEventListener("scroll", onWindowResize, true);
 });
 </script>
