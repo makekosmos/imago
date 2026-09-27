@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, computed, useTemplateRef, nextTick, ref, watch } from "vue";
+import { shallowRef, computed, useTemplateRef, nextTick, ref, watch, onBeforeUnmount } from "vue";
 import { Calendar as CalendarIcon, DollarSign } from "@lucide/vue";
 import ContextMenu from "./ContextMenu.vue";
 import ContextMenuItem from "./ContextMenuItem.vue";
@@ -150,8 +150,11 @@ let lastTarget: TodoDropPayload | null = null;
 
 let rowSnapshot: { id: string; top: number; bottom: number; mid: number }[] = [];
 
+let endPointerSession: (() => void) | null = null;
+
 function onRowPointerDown(e: PointerEvent) {
   if (!props.draggable || expanded.value || e.button !== 0) return;
+  if (endPointerSession) return; // один pointer — одна drag-сессия
 
   const ox = e.clientX;
   const oy = e.clientY;
@@ -165,12 +168,31 @@ function onRowPointerDown(e: PointerEvent) {
     }
     if (started) onDragMove(me);
   };
-  const onUp = () => {
+  const off = () => {
     document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onCancel);
+    endPointerSession = null;
+  };
+  const onUp = () => {
+    off();
     if (started) onDragEnd();
   };
+  // pointercancel — браузер забрал жест (touch-scroll, OS drag). Без
+  // обработчика pointermove-listener утекал, а clone/ghost/скрытая строка
+  // и `grabbing` курсор оставались навсегда. Отменённый жест — не drop.
+  const onCancel = () => {
+    off();
+    if (started) {
+      lastTarget = null;
+      dragSuppressClick.value = false;
+      onDragEnd();
+    }
+  };
   document.addEventListener("pointermove", onMove);
-  document.addEventListener("pointerup", onUp, { once: true });
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onCancel);
+  endPointerSession = onCancel;
 }
 
 function onRowClick(e: MouseEvent) {
@@ -306,6 +328,10 @@ function onDragEnd() {
     emit("drop", payload);
   }
 }
+
+// Unmount посреди drag'а (строку убрали из списка): снять document-listener'ы
+// и убрать clone/ghost/cursor — onCancel делает и то, и другое без drop'а.
+onBeforeUnmount(() => endPointerSession?.());
 </script>
 
 <template>
