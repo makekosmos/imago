@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { Calendar as CalendarIcon } from "@lucide/vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 import Calendar from "./Calendar.vue";
 
 interface Props {
@@ -320,8 +321,13 @@ function onDocPointerDown(e: PointerEvent) {
   open.value = false;
 }
 
+const escapeToken = useEscapeLayer(open);
+
 function onDocKey(e: KeyboardEvent) {
-  if (e.key === "Escape" && open.value) open.value = false;
+  if (e.key !== "Escape" || !open.value) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  e.preventDefault();
+  open.value = false;
 }
 
 function onWindowResize() {
@@ -331,12 +337,12 @@ function onWindowResize() {
 watch(open, (isOpen) => {
   if (isOpen) {
     document.addEventListener("pointerdown", onDocPointerDown);
-    document.addEventListener("keydown", onDocKey);
+    document.addEventListener("keydown", onDocKey, true);
     window.addEventListener("resize", onWindowResize);
     window.addEventListener("scroll", onWindowResize, true);
   } else {
     document.removeEventListener("pointerdown", onDocPointerDown);
-    document.removeEventListener("keydown", onDocKey);
+    document.removeEventListener("keydown", onDocKey, true);
     window.removeEventListener("resize", onWindowResize);
     window.removeEventListener("scroll", onWindowResize, true);
   }
@@ -344,7 +350,7 @@ watch(open, (isOpen) => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocPointerDown);
-  document.removeEventListener("keydown", onDocKey);
+  document.removeEventListener("keydown", onDocKey, true);
   window.removeEventListener("resize", onWindowResize);
   window.removeEventListener("scroll", onWindowResize, true);
 });

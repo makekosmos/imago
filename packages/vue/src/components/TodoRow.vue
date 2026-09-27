@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef, computed, useTemplateRef, nextTick, ref, watch, onBeforeUnmount } from "vue";
 import { Calendar as CalendarIcon, DollarSign } from "@lucide/vue";
+import { useEscapeLayer } from "../composables/useEscapeLayer";
 import ContextMenu from "./ContextMenu.vue";
 import ContextMenuItem from "./ContextMenuItem.vue";
 import DateChip from "./DateChip.vue";
@@ -105,8 +106,13 @@ function commitPrice() {
   }
 }
 
+// Раскрытый редактор — слой в Escape-стеке: Escape сворачивает только его,
+// нижележащий overlay (модалка) не закрывается. Если внутри открыт свой
+// overlay (DateChip), он ставит defaultPrevented раньше — тогда молчим.
+useEscapeLayer(expanded);
+
 function onExpandKeyDown(e: KeyboardEvent) {
-  if (e.key === "Escape") {
+  if (e.key === "Escape" && !e.defaultPrevented) {
     e.preventDefault();
     expanded.value = false;
   }
@@ -153,6 +159,10 @@ let rowSnapshot: { id: string; top: number; bottom: number; mid: number }[] = []
 let endPointerSession: (() => void) | null = null;
 
 function onRowPointerDown(e: PointerEvent) {
+  // Новый pointer-жест сбрасывает suppress-флаг: после drop'а вне строки
+  // click долетает до общего предка, а не до строки — без сброса флаг
+  // навсегда "съедает" следующий обычный клик по строке.
+  dragSuppressClick.value = false;
   if (!props.draggable || expanded.value || e.button !== 0) return;
   if (endPointerSession) return; // один pointer — одна drag-сессия
 

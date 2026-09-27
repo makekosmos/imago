@@ -285,10 +285,13 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
   const needsShift = parts.includes("shift");
   const needsAlt = parts.includes("alt");
 
-  if (needsMeta && !e.metaKey) return false;
-  if (needsCtrl && !e.ctrlKey) return false;
-  if (needsShift && !e.shiftKey) return false;
-  if (needsAlt && !e.altKey) return false;
+  // Требуем точного набора модификаторов: «meta+b» не должно срабатывать
+  // на Meta+Shift+B — у комбинации с лишними модификаторами может быть
+  // своё назначение (или её вообще жали по ошибке).
+  if (needsMeta !== e.metaKey) return false;
+  if (needsCtrl !== e.ctrlKey) return false;
+  if (needsShift !== e.shiftKey) return false;
+  if (needsAlt !== e.altKey) return false;
 
   const shortcutKeys = expandKeyVariants(key);
   const eventKeys = expandKeyVariants(e.key);
@@ -302,6 +305,8 @@ function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
 
 function handleKeydown(e: KeyboardEvent) {
   if (props.mode !== "navigation" || !props.toggleShortcut) return;
+  // Событие уже поглощено overlay-слоем (Escape в модалке и т.п.).
+  if (e.defaultPrevented) return;
 
   const shortcuts = props.toggleShortcut.split("|");
   if (!shortcuts.some((shortcut) => matchesShortcut(e, shortcut))) return;
@@ -311,6 +316,9 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 function handleResizeStart(e: MouseEvent) {
+  // Только ЛКМ: ПКМ по ручке иначе стартует resize-сессию, а click-порог
+  // в handleResizeEnd превращает правый клик в toggle сайдбара.
+  if (e.button !== 0) return;
   e.preventDefault();
   mouseDownX = e.clientX;
   mouseDownY = e.clientY;
@@ -336,6 +344,9 @@ function handleResizeMove(e: MouseEvent) {
 }
 
 function handleResizeEnd(e: MouseEvent) {
+  // Любой mouseup завершает сессию — иначе потерянный ЛКМ-mouseup
+  // (отпускание вне окна) оставляет isResizing навсегда. Toggle по
+  // click-порогу — только для ЛКМ.
   if (resizeRaf.value) {
     cancelAnimationFrame(resizeRaf.value);
     resizeRaf.value = null;
@@ -345,7 +356,7 @@ function handleResizeEnd(e: MouseEvent) {
 
   const dx = Math.abs(e.clientX - mouseDownX);
   const dy = Math.abs(e.clientY - mouseDownY);
-  if (dx < 4 && dy < 4) {
+  if (e.button === 0 && dx < 4 && dy < 4) {
     lineExpanded.value = true;
     window.setTimeout(() => {
       lineExpanded.value = false;

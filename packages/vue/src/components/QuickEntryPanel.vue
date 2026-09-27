@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef, watch, nextTick, useTemplateRef, onBeforeUnmount } from "vue";
 import { DollarSign, Folder, X } from "@lucide/vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 import DateChip from "./DateChip.vue";
 import type { QuickEntryProject, QuickEntrySavePayload } from "./types";
 
@@ -67,19 +68,42 @@ function inputValue(event: Event): string {
   return (event.target as HTMLInputElement | HTMLTextAreaElement).value;
 }
 
+// Регистрируем панель в стеке overlay'ей — нижележащие слои (модалка и т.п.)
+// не должны глотать её Escape. Внутренние overlay (DateChip поповер)
+// стоят выше и ставят defaultPrevented — тогда element-level Escape молчит.
+const escapeToken = useEscapeLayer(() => props.open);
+
+// Escape на document capture: закрываем панель при любом фокусе внутри неё
+// (инпуты покрыты своими обработчиками, кнопки/price — нет), но только
+// когда панель — верхний слой стека.
+function onDocEscape(e: KeyboardEvent) {
+  if (e.key !== "Escape" || !props.open) return;
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  e.preventDefault();
+  close();
+}
+
+function onBackdropPointerDown(e: PointerEvent) {
+  if (e.button !== 0) return;
+  // Клик по backdrop при открытом внутреннем overlay (DateChip поповер)
+  // dismiss'ит только его — панель с введёнными данными не закрывается.
+  if (!isTopEscapeLayer(escapeToken.value)) return;
+  close();
+}
+
 function onTitleKeyDown(e: KeyboardEvent) {
   if (e.key === "Enter") {
     e.preventDefault();
     save();
   }
-  if (e.key === "Escape") {
+  if (e.key === "Escape" && !e.defaultPrevented) {
     e.preventDefault();
     close();
   }
 }
 
 function onNotesKeyDown(e: KeyboardEvent) {
-  if (e.key === "Escape") {
+  if (e.key === "Escape" && !e.defaultPrevented) {
     e.preventDefault();
     close();
   }
@@ -92,7 +116,15 @@ watch(
       reset();
       nextTick(() => titleRef.value?.focus());
     }
+    // document недоступен при SSR — тогда слушатели не нужны.
+    if (typeof document === "undefined") return;
+    if (val) {
+      document.addEventListener("keydown", onDocEscape, true);
+    } else {
+      document.removeEventListener("keydown", onDocEscape, true);
+    }
   },
+  { immediate: true },
 );
 
 // Outside-click для project menu. Раньше использовался nested watch({ once: true })
@@ -116,6 +148,7 @@ watch(showProjectMenu, (val) => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener("keydown", onDocEscape, true);
   document.removeEventListener("mousedown", onProjectMenuOutsideClick);
 });
 </script>
@@ -125,7 +158,7 @@ onBeforeUnmount(() => {
     <!-- Backdrop -->
     <div
       class="quick-entry-panel__part-2"
-      @click="close"
+      @pointerdown="onBackdropPointerDown"
     />
 
     <!-- Panel -->

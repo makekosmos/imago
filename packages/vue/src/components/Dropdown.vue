@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string | number">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { ChevronDown } from "@lucide/vue";
+import { isTopEscapeLayer, useEscapeLayer } from "../composables/useEscapeLayer";
 
 /**
  * Универсальный Dropdown (shadcn-стиль): кастомный триггер + popover с
@@ -208,8 +209,13 @@ function pick(opt: Option<T>) {
   open.value = false;
 }
 
+const escapeToken = useEscapeLayer(open);
+
 function onKey(e: KeyboardEvent) {
   if (!open.value) return;
+  // Не перехватываем клавиши, пока поверх открыт другой overlay
+  // (контекст-меню, вложенный dropdown) — Escape/стрелки принадлежат ему.
+  if (!isTopEscapeLayer(escapeToken.value)) return;
   if (e.key === "Escape") {
     e.preventDefault();
     open.value = false;
@@ -276,12 +282,12 @@ function onWindowResize() {
 watch(open, (isOpen) => {
   if (isOpen) {
     document.addEventListener("pointerdown", onDocPointerDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     window.addEventListener("resize", onWindowResize);
     window.addEventListener("scroll", onWindowResize, true);
   } else {
     document.removeEventListener("pointerdown", onDocPointerDown);
-    document.removeEventListener("keydown", onKey);
+    document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("resize", onWindowResize);
     window.removeEventListener("scroll", onWindowResize, true);
   }
@@ -289,7 +295,7 @@ watch(open, (isOpen) => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocPointerDown);
-  document.removeEventListener("keydown", onKey);
+  document.removeEventListener("keydown", onKey, true);
   window.removeEventListener("resize", onWindowResize);
   window.removeEventListener("scroll", onWindowResize, true);
 });

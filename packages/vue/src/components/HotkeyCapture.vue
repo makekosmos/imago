@@ -16,6 +16,7 @@
 // обратно через `pendingAccelerator` / `pendingCancel` events.
 
 import { computed, ref, watch } from "vue";
+import { useEscapeLayer } from "../composables/useEscapeLayer";
 
 const props = withDefaults(
   defineProps<{
@@ -40,6 +41,10 @@ const props = withDefaults(
 
 const capturing = ref(false);
 const buttonRef = ref<HTMLButtonElement | null>(null);
+
+// Во время capture занимаем верхний слой Escape-стека — нижележащий overlay
+// (модалка) не должен закрыться по Escape, пока мы ждём сочетание.
+useEscapeLayer(capturing);
 
 // На macOS модификаторы показываем нативными символами (⌘ ⌥ ⌃ ⇧), на остальных
 // платформах — текстом. Super/Meta = Command на macOS, Win на Windows.
@@ -135,7 +140,7 @@ function keyEventToAccelerator(e: KeyboardEvent): string | null {
 }
 
 function onKey(e: KeyboardEvent) {
-  if (!capturing.value) return;
+  if (!capturing.value || e.defaultPrevented) return;
   // В externalCapture parent сам ловит события через системный hook —
   // DOM keydown не trustworthy (системные shortcut'ы перехватываются до
   // того как WebContents получит event).
