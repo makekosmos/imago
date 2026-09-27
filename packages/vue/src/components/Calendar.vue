@@ -41,7 +41,10 @@ function parseIso(iso: string | null): Date | null {
   if (!iso) return null;
   const m = /^([+-]?\d{4,6})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return null;
-  return localDate(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  // Год за пределами диапазона Date (±~275760) даёт Invalid Date — без
+  // проверки NaN стекался в viewMonth/cells и вся сетка становилась "NaN".
+  const d = localDate(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 const todayDate = computed(() => {
@@ -122,9 +125,14 @@ function shiftMonth(delta: number) {
   viewMonth.value = localDate(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + delta, 1);
 }
 
+function isValidViewDate(year: number, month: number): boolean {
+  return !Number.isNaN(localDate(year, month, 1).getTime());
+}
+
 function setYear(rawYear: string | number) {
   const year = Number(rawYear);
   if (!Number.isInteger(year)) return;
+  if (!isValidViewDate(year, viewMonth.value.getMonth())) return;
   viewMonth.value = localDate(year, viewMonth.value.getMonth(), 1);
 }
 
@@ -132,6 +140,9 @@ function createYearOption(query: string) {
   if (!/^-?\d{1,6}$/.test(query)) return null;
   const year = Number(query);
   if (!Number.isInteger(year)) return null;
+  // 6 цифр позволяют выйти за диапазон Date (|year| > ~275760 → Invalid
+  // Date) — такой год нельзя выбрать: сетка превращалась бы в "NaN".
+  if (!isValidViewDate(year, 0)) return null;
   return { value: year, label: String(year) };
 }
 

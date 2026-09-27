@@ -3,7 +3,13 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
-import * as sfcNs from "@vue/compiler-sfc";
+// vue/compiler-sfc — официальный export-subpath прямой зависимости `vue`.
+// Голый specifier "@vue/compiler-sfc" — транзитивная зависимость (peer
+// vue-router / @vitejs/plugin-vue): под pnpm (задекларированный
+// packageManager) он не хоистится в корневые node_modules и тест падал с
+// ERR_MODULE_NOT_FOUND; под bun/npm он резолвился бы в ЧУЖУЮ версию
+// (3.5.x), не совпадающую с vue 3.6, который эти же тесты компилируют.
+import * as sfcNs from "vue/compiler-sfc";
 import { effectScope, nextTick } from "vue";
 
 // Поведенческие тесты <script setup> компонентов без браузера: SFC
@@ -80,18 +86,23 @@ function runSetup(component, props) {
 
 try {
   // Порядок важен: .vue-зависимости компилируются до компонентов, которые их
-  // импортируют (Dropdown ← Calendar ← DateTimePicker).
+  // импортируют (Dropdown ← Calendar ← {DateTimePicker, DateChip}).
   transpileTsModule("packages/vue/src/components/dates.ts");
   transpileTsModule("packages/vue/src/composables/useEscapeLayer.ts");
+  transpileTsModule("packages/vue/src/composables/usePlatform.ts");
   compileVueModule("packages/vue/src/components/Dropdown.vue");
   compileVueModule("packages/vue/src/components/Calendar.vue");
   compileVueModule("packages/vue/src/components/TimeColumn.vue");
   compileVueModule("packages/vue/src/components/DateTimePicker.vue");
+  compileVueModule("packages/vue/src/components/DateChip.vue");
+  compileVueModule("packages/vue/src/components/HotkeyCapture.vue");
 
   const Calendar = (await import(pathToFileURL(join(dir, "Calendar.compiled.mjs")).href)).default;
   const DateTimePicker = (await import(pathToFileURL(join(dir, "DateTimePicker.compiled.mjs")).href)).default;
   const Dropdown = (await import(pathToFileURL(join(dir, "Dropdown.compiled.mjs")).href)).default;
   const TimeColumn = (await import(pathToFileURL(join(dir, "TimeColumn.compiled.mjs")).href)).default;
+  const DateChip = (await import(pathToFileURL(join(dir, "DateChip.compiled.mjs")).href)).default;
+  const HotkeyCapture = (await import(pathToFileURL(join(dir, "HotkeyCapture.compiled.mjs")).href)).default;
 
   // KOS-204 Calendar: value="2024-02-29" (високосный день) раньше открывал
   // календарь на МАРТЕ и подсвечивал 1 марта — parseIso/localDate собирали
@@ -209,6 +220,76 @@ try {
     const highlighted = bindings.filteredOptions.value[bindings.highlightIdx.value];
     assert.equal(highlighted?.value, "c", "reopen keeps highlight on the selected option");
     scope.stop();
+  }
+
+  // KOS-221 Calendar: год за пределами диапазона Date (6-значный "999999" >
+  // ~275760) раньше принимался — localDate давал Invalid Date, и вся сетка
+  // месяца превращалась в 42 ячейки "NaN" (viewMonth/viewYear → NaN). Теперь
+  // такой год отвергается и в create-option, и в setYear, и в value-prop.
+  {
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "2024-06-15",
+      today: "2024-06-15",
+    });
+    assert.equal(bindings.createYearOption("999999"), null, "out-of-range year option rejected");
+    assert.equal(bindings.createYearOption("2025")?.value, 2025, "normal year option allowed");
+    const before = bindings.viewMonth.value.getFullYear();
+    bindings.setYear("999999");
+    await nextTick();
+    assert.equal(
+      bindings.viewMonth.value.getFullYear(),
+      before,
+      "setYear ignores years outside the Date range",
+    );
+    assert.ok(
+      bindings.cells.value.every((c) => Number.isFinite(c.day) && !c.iso.includes("NaN")),
+      "grid never contains NaN cells",
+    );
+    scope.stop();
+  }
+  {
+    // Тот же NaN-каскад через malformed value-prop: "999999-05-10" проходил
+    // regex, но давал Invalid Date → сетка NaN. Теперь parseIso → null и
+    // календарь открывается на `today`.
+    const { scope, bindings } = runSetup(Calendar, {
+      value: "999999-05-10",
+      today: "2024-06-15",
+    });
+    assert.equal(bindings.viewMonth.value.getFullYear(), 2024);
+    assert.equal(bindings.viewMonth.value.getMonth(), 5, "invalid value falls back to today");
+    assert.ok(bindings.cells.value.every((c) => Number.isFinite(c.day)));
+    scope.stop();
+  }
+
+  // KOS-221 DateChip: label для malformed ISO-значения. Месяц "13" раньше
+  // индексировал RU_MONTHS_SHORT вне массива → чип показывал буквальное
+  // "5 undefined". Невалидные части → fallback на исходное value.
+  {
+    const { scope, bindings } = runSetup(DateChip, {
+      value: "2024-13-05",
+      placeholder: "Дата",
+    });
+    assert.equal(bindings.label.value, "2024-13-05", "malformed month shows raw value, not 'undefined'");
+    assert.ok(!bindings.label.value.includes("undefined"));
+    scope.stop();
+  }
+  {
+    const { scope, bindings } = runSetup(DateChip, { value: "2024-05-07" });
+    assert.equal(bindings.label.value, "7 май");
+    scope.stop();
+  }
+
+  // KOS-221 HotkeyCapture: setup() не должен требовать `navigator` (в Node/
+  // SSR его нет — раньше `navigator.platform` в setup падал ReferenceError).
+  // И accelerator с "+" как основной клавишей ("Ctrl++") не должен терять
+  // её в отображении — раньше показывался только модификатор.
+  {
+    const { scope, bindings } = runSetup(HotkeyCapture, { modelValue: "Ctrl++" });
+    assert.deepEqual(bindings.keyParts.value, ["Ctrl", "+"], '"+" main key is preserved');
+    scope.stop();
+    const { scope: s2, bindings: b2 } = runSetup(HotkeyCapture, { modelValue: "Ctrl+B" });
+    assert.deepEqual(b2.keyParts.value, ["Ctrl", "B"]);
+    s2.stop();
   }
 
   console.log("vue-behavior tests passed");
