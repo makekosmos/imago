@@ -35,13 +35,13 @@ pub fn vget<'a>(v: &'a Value, key: &str) -> &'a Value {
 }
 
 pub fn vstr(v: &Value, key: &str) -> String {
-    v.get(key)
-        .and_then(|x| {
-            x.as_str()
-                .map(str::to_string)
-                .or_else(|| Some(x.to_string()))
-        })
-        .unwrap_or_default()
+    match v.get(key) {
+        Some(Value::String(s)) => s.clone(),
+        // Numbers/bools/objects stringify; null renders like a missing key
+        // rather than the literal "null".
+        Some(other) if !other.is_null() => other.to_string(),
+        _ => String::new(),
+    }
 }
 
 pub fn vopt(v: &Value, key: &str) -> Option<String> {
@@ -78,8 +78,10 @@ pub fn fmt_bytes(n: f64) -> String {
 pub fn fmt_ms(ms: f64) -> String {
     let secs = ms / 1000.0;
     let days = (secs / 86400.0).floor();
-    let h = (secs % 86400.0) / 3600.0;
-    let m = (secs % 3600.0) / 60.0;
+    // Truncate like `days` — "{:.0}" rounds, so fractional 59.6 minutes
+    // would otherwise render as "60 мин. назад".
+    let h = ((secs % 86400.0) / 3600.0).floor();
+    let m = ((secs % 3600.0) / 60.0).floor();
     if days >= 1.0 {
         format!("{days:.0} дн. назад")
     } else if h >= 1.0 {
@@ -246,5 +248,33 @@ where
             .text_color(c(MUTED_FG()))
             .child("Загрузка…")
             .into_any_element(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{fmt_ms, vstr};
+    use serde_json::json;
+
+    /// JSON `null` must render like a missing key ("") — not the literal
+    /// string "null" in the UI.
+    #[test]
+    fn vstr_renders_null_like_a_missing_key() {
+        let value = json!({"name": null, "count": 42, "title": "Отчёт", "on": true});
+        assert_eq!(vstr(&value, "missing"), "");
+        assert_eq!(vstr(&value, "name"), "");
+        assert_eq!(vstr(&value, "count"), "42");
+        assert_eq!(vstr(&value, "title"), "Отчёт");
+        assert_eq!(vstr(&value, "on"), "true");
+    }
+
+    /// "Ago" formatting truncates fractional units — 59.6 minutes is
+    /// "59 мин. назад", never "60 мин. назад" (same for hours/days).
+    #[test]
+    fn fmt_ms_truncates_fractional_units() {
+        assert_eq!(fmt_ms(59.6 * 60_000.0), "59 мин. назад");
+        assert_eq!(fmt_ms(23.6 * 3_600_000.0), "23 ч. назад");
+        assert_eq!(fmt_ms(1.5 * 86_400_000.0), "1 дн. назад");
+        assert_eq!(fmt_ms(30_000.0), "только что");
     }
 }
