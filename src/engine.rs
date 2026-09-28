@@ -223,8 +223,10 @@ pub fn host_user_data() -> Option<PathBuf> {
 pub fn agenda_executable() -> Option<PathBuf> {
     // MIGRATION(KOS-267): remove KOSMOS_AGENDA_EXECUTABLE after 2026-11-01
     for var in ["MUNDUS_AGENDA_EXECUTABLE", "KOSMOS_AGENDA_EXECUTABLE"] {
-        if let Some(path) = env_dir(var) {
-            return path.is_file().then_some(path);
+        // A set-but-missing override must not mask the later legs — same
+        // "first candidate that resolves wins" rule as data_dir discovery.
+        if let Some(path) = env_dir(var).filter(|p| p.is_file()) {
+            return Some(path);
         }
     }
     let exe = std::env::current_exe().ok()?;
@@ -563,14 +565,18 @@ mod tests {
     }
 
     /// MUNDUS_AGENDA_EXECUTABLE overrides; the legacy var still works when
-    /// the new one is unset.
+    /// the new one is unset or points at a missing file.
     #[test]
     fn agenda_executable_env_override_order() {
         let _hold = ENV_LOCK.lock().unwrap();
         let _env = env_restore();
         let dir = tmp_dir("i-bin");
         std::fs::create_dir_all(&dir).unwrap();
-        let (new, old) = (dir.join("mundus.exe"), dir.join("kosmos.exe"));
+        let (new, old, gone) = (
+            dir.join("mundus.exe"),
+            dir.join("kosmos.exe"),
+            dir.join("gone.exe"),
+        );
         std::fs::write(&new, "x").unwrap();
         std::fs::write(&old, "x").unwrap();
 
@@ -578,9 +584,29 @@ mod tests {
         set_env("KOSMOS_AGENDA_EXECUTABLE", Some(&old));
         assert_eq!(agenda_executable().unwrap(), new);
 
+        // Set-but-missing must not shadow the legacy var or the bundled path.
+        set_env("MUNDUS_AGENDA_EXECUTABLE", Some(&gone));
+        assert_eq!(agenda_executable().unwrap(), old);
+
         set_env("MUNDUS_AGENDA_EXECUTABLE", None);
         assert_eq!(agenda_executable().unwrap(), old);
 
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// An empty MUNDUS_DATA_DIR is not an override — discovery continues to
+    /// the legacy env leg.
+    #[test]
+    fn data_dir_ignores_empty_env_value() {
+        let _hold = ENV_LOCK.lock().unwrap();
+        let _env = env_restore();
+        let (k, c) = (tmp_dir("j-k"), tmp_dir("j-c"));
+        write_lock(&k);
+        redirect_env(None, Some(&k), Some(&c));
+        std::env::set_var("MUNDUS_DATA_DIR", "");
+        assert_eq!(data_dir().unwrap(), k);
+        for d in [k, c] {
+            let _ = std::fs::remove_dir_all(d);
+        }
     }
 }
