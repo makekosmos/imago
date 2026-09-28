@@ -217,7 +217,7 @@ pub fn host_user_data() -> Option<PathBuf> {
 }
 
 /// Packaged Agenda GPUI lives next to this exe as
-/// `resources/components/agenda/Mundus Agenda.exe` (KOS-137).
+/// `resources/components/agenda/Agenda.exe` (KOS-137).
 /// `MUNDUS_AGENDA_EXECUTABLE` overrides for dev/local runs; the Kosmos names
 /// are legacy fallbacks while pre-Mundus installs still exist.
 pub fn agenda_executable() -> Option<PathBuf> {
@@ -232,7 +232,7 @@ pub fn agenda_executable() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let components = exe.parent()?.parent()?;
     // MIGRATION(KOS-267): remove "Kosmos Agenda.exe" after 2026-11-01
-    ["Mundus Agenda.exe", "Kosmos Agenda.exe"]
+    ["Agenda.exe", "Kosmos Agenda.exe"]
         .iter()
         .map(|name| components.join("agenda").join(name))
         .find(|candidate| candidate.is_file())
@@ -308,6 +308,33 @@ mod tests {
         }
     }
 
+    /// Drains headers and the `Content-Length` body. Answering after a single
+    /// `read` could close the socket with request bytes still unread, which
+    /// resets the connection (Windows) before the client sees the response.
+    fn read_request(stream: &mut std::net::TcpStream) {
+        let mut request = Vec::new();
+        let mut buf = [0u8; 8192];
+        loop {
+            let Ok(n) = stream.read(&mut buf) else { return };
+            if n == 0 {
+                return;
+            }
+            request.extend_from_slice(&buf[..n]);
+            let Some(end) = request.windows(4).position(|w| w == b"\r\n\r\n") else {
+                continue;
+            };
+            let headers = String::from_utf8_lossy(&request[..end]).to_ascii_lowercase();
+            let body_len = headers
+                .lines()
+                .find_map(|l| l.strip_prefix("content-length:"))
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(0);
+            if request.len() >= end + 4 + body_len {
+                return;
+            }
+        }
+    }
+
     /// One-shot HTTP stub: accepts a single request, answers `status` +
     /// `body`. Returns the bound port for the lock file.
     fn serve_once(status: &str, body: &'static str) -> u16 {
@@ -316,8 +343,7 @@ mod tests {
         let status = status.to_string();
         std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            let mut buf = [0u8; 8192];
-            let _ = stream.read(&mut buf);
+            read_request(&mut stream);
             let response = format!(
                 "{status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                 body.len()
