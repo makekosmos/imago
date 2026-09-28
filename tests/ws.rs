@@ -1,7 +1,7 @@
 //! Integration probes for `Engine::subscribe` / `EventStream::next_event`
 //! against a real `tungstenite` server stub — the same protocol shape as
 //! `runtime/src/ws_server` (hello handshake → `{"event": ...}` frames).
-use kosmos_gpui_kit::engine::Engine;
+use mundus_gpui_kit::engine::Engine;
 use serde_json::{json, Value};
 use std::net::TcpListener;
 use std::path::PathBuf;

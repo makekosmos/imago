@@ -1,4 +1,4 @@
-//! kosmos-gpui-kit — shared GPUI surface extracted from `cortex/manager-gpui`:
+//! mundus-gpui-kit — shared GPUI surface extracted from `cortex/manager-gpui`:
 //! Imago theme tokens (`theme`), shell chrome (`widgets`), view primitives and
 //! JSON accessors (`fields`), and the Engine lock/RPC client (`engine`).
 //!

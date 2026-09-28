@@ -1,4 +1,4 @@
-# AGENTS.md — kosmos-gpui-kit
+# AGENTS.md — mundus-gpui-kit
 
 Shared GPUI crate extracted from `cortex/manager-gpui`: Imago theme tokens
 (`theme`), shell chrome (`widgets`), view primitives + JSON accessors

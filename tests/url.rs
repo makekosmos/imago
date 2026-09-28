@@ -2,7 +2,7 @@
 //! (Electron `shell.openExternal` parity — no `file://`, `javascript:` etc).
 //! URL schemes are case-insensitive per RFC 3986 §3.1, so `HTTPS://…` must
 //! take the same path as `https://…`.
-use kosmos_gpui_kit::engine::open_url;
+use mundus_gpui_kit::engine::open_url;
 
 fn invalid_url_error(url: &str) -> bool {
     matches!(open_url(url), Err(e) if e == "Недопустимый URL")
