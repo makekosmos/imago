@@ -1,6 +1,6 @@
 [package]
-name = "kosmos-gpui-kit"
-version = "0.1.0"
+name = "mundus-gpui-kit"
+version = "0.2.0"
 edition = "2021"
 description = "Shared GPUI crate — Imago theme tokens, shell chrome, view primitives and the Engine lock/RPC client (extracted from cortex/manager-gpui)"
 publish = false

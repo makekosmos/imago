@@ -30,7 +30,7 @@ impl Engine {
     pub fn subscribe(&self) -> Result<EventStream, String> {
         let lock = self.lock()?;
         if lock.ws_port == 0 {
-            return Err("Engine не поддерживает события. Обновите Kosmos.".into());
+            return Err("Engine не поддерживает события. Обновите Mundus.".into());
         }
         let (mut socket, _response) =
             tungstenite::connect(format!("ws://127.0.0.1:{}/", lock.ws_port))
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn subscribe_without_lock_reports_engine_down() {
         let engine = Engine {
-            data_dir: Some(std::env::temp_dir().join("kosmos-gpui-kit-no-such-dir")),
+            data_dir: Some(std::env::temp_dir().join("mundus-gpui-kit-no-such-dir")),
         };
         let error = match engine.subscribe() {
             Err(error) => error,
