@@ -78,7 +78,7 @@ impl Engine {
         .ok_or_else(|| EngineError::local(ErrorKind::Transport, "no response from Engine"))?;
         // Status endpoints answer `{"ok":true,...}` without a `data` envelope.
         let value: Value = response.into_json().map_err(|e| {
-            EngineError::local(ErrorKind::Transport, format!("response not json: {e}"))
+            EngineError::local(ErrorKind::Malformed, format!("response not json: {e}"))
         })?;
         if value["ok"] != true {
             let detail = value["error"].as_str().unwrap_or("unavailable");
@@ -130,7 +130,7 @@ fn or_status_body(result: Result<ureq::Response, ureq::Error>) -> Option<ureq::R
 fn decode(response: ureq::Response) -> Result<Value, EngineError> {
     let value: Value = response
         .into_json()
-        .map_err(|e| EngineError::local(ErrorKind::Transport, format!("response not json: {e}")))?;
+        .map_err(|e| EngineError::local(ErrorKind::Malformed, format!("response not json: {e}")))?;
     if value["ok"] != true {
         let detail = value
             .get("error")

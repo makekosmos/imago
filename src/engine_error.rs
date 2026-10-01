@@ -56,6 +56,7 @@ impl EngineError {
             ErrorKind::NotFound => "Запись не найдена в Engine. Обновите список.".into(),
             ErrorKind::Timeout => "Engine не ответил вовремя. Повторите попытку.".into(),
             ErrorKind::Unavailable => "Engine временно недоступен. Повторите попытку.".into(),
+            ErrorKind::Malformed => "Некорректный ответ Engine. Обновите Mundus.".into(),
         }
     }
 }
@@ -87,6 +88,8 @@ pub enum ErrorKind {
     NotFound,
     Timeout,
     Unavailable,
+    /// Engine answered but the body/shape was not what the protocol expects.
+    Malformed,
 }
 
 impl ErrorKind {
@@ -169,6 +172,7 @@ mod tests {
             ErrorKind::NotFound,
             ErrorKind::Timeout,
             ErrorKind::Unavailable,
+            ErrorKind::Malformed,
         ] {
             let error = EngineError {
                 kind,

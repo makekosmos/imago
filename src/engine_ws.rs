@@ -58,7 +58,7 @@ impl Engine {
             match socket.read() {
                 Ok(Message::Text(text)) => {
                     let value: Value = serde_json::from_str(&text).map_err(|e| {
-                        EngineError::local(ErrorKind::Transport, format!("hello not json: {e}"))
+                        EngineError::local(ErrorKind::Malformed, format!("hello not json: {e}"))
                     })?;
                     match value.get("kind").and_then(Value::as_str) {
                         Some("hello_ok") => return Ok(EventStream { socket }),
@@ -71,7 +71,7 @@ impl Engine {
                         }
                         _ => {
                             return Err(EngineError::local(
-                                ErrorKind::Transport,
+                                ErrorKind::Malformed,
                                 "unexpected handshake frame",
                             ))
                         }
