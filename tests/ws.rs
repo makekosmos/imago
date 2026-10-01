@@ -113,7 +113,10 @@ fn subscribe_surfaces_hello_error_message() {
         Ok(_) => panic!("subscribe must fail on hello_error"),
     };
     let _ = std::fs::remove_dir_all(&dir);
-    assert_eq!(error, "Engine отклонил подписку: auth token does not match");
+    // The handshake `message` is the Engine's wire code — it stays in
+    // `detail` for the app log, not in the user-facing text.
+    assert_eq!(error.detail, "auth token does not match");
+    assert!(!error.message().contains("auth token"));
     stub.join().unwrap();
 }
 
@@ -180,7 +183,11 @@ fn subscribe_rejects_ws_port_zero() {
         Ok(_) => panic!("subscribe must fail when ws_port is 0"),
     };
     let _ = std::fs::remove_dir_all(&dir);
-    assert!(error.contains("не поддерживает"), "unexpected: {error}");
+    assert_eq!(
+        error.kind,
+        mundus_gpui_kit::engine_error::ErrorKind::NotCompatible,
+        "unexpected: {error}"
+    );
 }
 
 /// A Ping between events must not break the stream — tungstenite queues

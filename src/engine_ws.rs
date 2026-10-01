@@ -14,6 +14,7 @@ use std::net::TcpStream;
 use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 
 use crate::engine::{Engine, CLIENT_CLASS};
+use crate::engine_error::{EngineError, ErrorKind};
 
 /// Blocking event stream on a dedicated worker thread (the socket read
 /// blocks, so never poll it from the UI thread). `next_event` returns
@@ -27,14 +28,18 @@ impl Engine {
     /// Connect `ws://127.0.0.1:<ws_port>` and complete the `hello`
     /// handshake. `accept_async` on the server side accepts any request
     /// path — the lock-file port + token are the actual gate.
-    pub fn subscribe(&self) -> Result<EventStream, String> {
+    pub fn subscribe(&self) -> Result<EventStream, EngineError> {
         let lock = self.lock()?;
         if lock.ws_port == 0 {
-            return Err("Engine не поддерживает события. Обновите Mundus.".into());
+            return Err(EngineError::local(
+                ErrorKind::NotCompatible,
+                "engine.lock.json has no ws_port",
+            ));
         }
         let (mut socket, _response) =
-            tungstenite::connect(format!("ws://127.0.0.1:{}/", lock.ws_port))
-                .map_err(|_| "Нет подтверждения от Engine. Обновите список.".to_string())?;
+            tungstenite::connect(format!("ws://127.0.0.1:{}/", lock.ws_port)).map_err(|e| {
+                EngineError::local(ErrorKind::Transport, format!("ws connect failed: {e}"))
+            })?;
         let hello = json!({
             "kind": "hello",
             // Same contract version the HTTP client sends in
@@ -48,12 +53,13 @@ impl Engine {
         });
         socket
             .send(Message::text(hello.to_string()))
-            .map_err(|_| "Engine не принял подписку на события.".to_string())?;
+            .map_err(|e| EngineError::local(ErrorKind::Transport, format!("hello send: {e}")))?;
         loop {
             match socket.read() {
                 Ok(Message::Text(text)) => {
-                    let value: Value =
-                        serde_json::from_str(&text).map_err(|_| "Некорректный ответ Engine")?;
+                    let value: Value = serde_json::from_str(&text).map_err(|e| {
+                        EngineError::local(ErrorKind::Transport, format!("hello not json: {e}"))
+                    })?;
                     match value.get("kind").and_then(Value::as_str) {
                         Some("hello_ok") => return Ok(EventStream { socket }),
                         Some("hello_error") => {
@@ -61,15 +67,20 @@ impl Engine {
                                 .get("message")
                                 .and_then(Value::as_str)
                                 .unwrap_or("handshake rejected");
-                            return Err(format!("Engine отклонил подписку: {detail}"));
+                            return Err(EngineError::engine(detail));
                         }
-                        _ => return Err("Некорректный ответ Engine".into()),
+                        _ => {
+                            return Err(EngineError::local(
+                                ErrorKind::Transport,
+                                "unexpected handshake frame",
+                            ))
+                        }
                     }
                 }
                 Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => {
                     // tungstenite already queued the Pong — flush it.
                     if socket.flush().is_err() {
-                        return Err("Соединение с Engine прервано.".into());
+                        return Err(EngineError::local(ErrorKind::Transport, "socket dropped"));
                     }
                 }
                 Ok(Message::Close(_)) => {
@@ -77,10 +88,13 @@ impl Engine {
                     // the peer sees a real close handshake (RFC 6455 §5.5.1)
                     // instead of a bare TCP FIN.
                     let _ = socket.flush();
-                    return Err("Соединение с Engine прервано.".into());
+                    return Err(EngineError::local(ErrorKind::Transport, "socket closed"));
                 }
-                Err(_) => {
-                    return Err("Соединение с Engine прервано.".into());
+                Err(error) => {
+                    return Err(EngineError::local(
+                        ErrorKind::Transport,
+                        format!("socket error: {error}"),
+                    ));
                 }
                 Ok(_) => {}
             }
@@ -133,6 +147,15 @@ mod tests {
             Err(error) => error,
             Ok(_) => panic!("subscribe must fail without a lock file"),
         };
-        assert!(error.contains("не запущен"), "unexpected error: {error}");
+        assert_eq!(
+            error.kind,
+            crate::engine_error::ErrorKind::NotRunning,
+            "unexpected error: {error}"
+        );
+        assert!(
+            error.message().contains("не запущен"),
+            "unexpected message: {}",
+            error.message()
+        );
     }
 }
