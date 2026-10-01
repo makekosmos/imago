@@ -57,6 +57,10 @@ impl EngineError {
             ErrorKind::Timeout => "Engine не ответил вовремя. Повторите попытку.".into(),
             ErrorKind::Unavailable => "Engine временно недоступен. Повторите попытку.".into(),
             ErrorKind::Malformed => "Некорректный ответ Engine. Обновите Mundus.".into(),
+            ErrorKind::Unknown => {
+                "Engine сообщил о неизвестной ошибке. Подробности записаны в журнал приложения."
+                    .into()
+            }
         }
     }
 }
@@ -90,29 +94,50 @@ pub enum ErrorKind {
     Unavailable,
     /// Engine answered but the body/shape was not what the protocol expects.
     Malformed,
+    /// Engine replied with a code outside the documented contract. Claiming
+    /// "temporarily unavailable" here would be a lie, so it is its own kind.
+    Unknown,
 }
 
 impl ErrorKind {
-    /// The wire carries the raw code (`canonical_ingress:invalid_request:*`,
-    /// `object_conflict:*`, plain class names); classify by its stable tokens.
+    /// Exact-match classification — never substring search, or any raw
+    /// message containing a class word would be misclassified.
+    ///
+    /// The Engine emits error strings in two documented shapes:
+    /// - the public app-RPC classes (cortex `public_app_error`), optionally
+    ///   `package worker: `-prefixed;
+    /// - internal wire codes `<area>:<class>:<detail>`, where `<class>` is
+    ///   one of the public classes (e.g.
+    ///   `canonical_ingress:invalid_request:canonical_field:/x`).
+    ///
+    /// `object_conflict:*` predates the class contract and is matched by its
+    /// exact area token. Everything else is `Unknown`.
     pub fn from_engine_code(code: &str) -> Self {
         let code = code.strip_prefix("package worker: ").unwrap_or(code);
-        if code.contains("conflict") {
-            Self::Conflict
-        } else if code.contains("invalid-request") || code.contains("invalid_request") {
-            Self::InvalidRequest
-        } else if code.contains("forbidden") {
-            Self::Forbidden
-        } else if code.contains("not-found")
-            || code.contains("not_found")
-            || code.contains("not found")
-        {
-            Self::NotFound
-        } else if code.contains("timeout") || code.contains("timed out") {
-            Self::Timeout
-        } else {
-            Self::Unavailable
+        if let Some(kind) = Self::public_class(code) {
+            return kind;
         }
+        let mut segments = code.split(':');
+        let area = segments.next().unwrap_or_default();
+        if let Some(kind) = segments.next().and_then(Self::public_class) {
+            return kind;
+        }
+        if area == "object_conflict" {
+            return Self::Conflict;
+        }
+        Self::Unknown
+    }
+
+    fn public_class(token: &str) -> Option<Self> {
+        Some(match token {
+            "invalid-request" | "invalid_request" => Self::InvalidRequest,
+            "forbidden" => Self::Forbidden,
+            "conflict" => Self::Conflict,
+            "not-found" | "not_found" => Self::NotFound,
+            "timeout" => Self::Timeout,
+            "unavailable" => Self::Unavailable,
+            _ => return None,
+        })
     }
 }
 
@@ -137,6 +162,11 @@ mod tests {
             ("not-found", ErrorKind::NotFound),
             ("timeout", ErrorKind::Timeout),
             ("unavailable", ErrorKind::Unavailable),
+            ("object_conflict:stale_revision", ErrorKind::Conflict),
+            (
+                "dispatch:unavailable:broker_restart",
+                ErrorKind::Unavailable,
+            ),
         ];
         for (code, kind) in cases {
             assert_eq!(ErrorKind::from_engine_code(code), kind, "code: {code}");
@@ -144,18 +174,28 @@ mod tests {
         }
     }
 
-    /// Unknown codes must degrade to Unavailable, not panic or leak a class
-    /// that has no user-facing meaning.
+    /// Anything outside the documented code shapes is Unknown — including
+    /// prose that merely *contains* a class word (substring matching would
+    /// misclassify it) — and the user text must not claim "temporarily
+    /// unavailable", which would be a lie for an unknown failure.
     #[test]
-    fn unknown_codes_become_unavailable() {
-        assert_eq!(
-            ErrorKind::from_engine_code("C:\\private\\path\\leak"),
-            ErrorKind::Unavailable
-        );
-        assert_eq!(
-            ErrorKind::from_engine_code("something else entirely"),
-            ErrorKind::Unavailable
-        );
+    fn unrecognized_codes_are_unknown_and_honest() {
+        for code in [
+            "C:\\private\\path\\leak",
+            "something else entirely",
+            "value conflict: 'Купить молоко' already exists",
+            "object conflict resolved differently",
+            "unknown-operation",
+        ] {
+            assert_eq!(
+                ErrorKind::from_engine_code(code),
+                ErrorKind::Unknown,
+                "code: {code}"
+            );
+        }
+        let message = EngineError::engine("totally unexpected").message();
+        assert!(!message.contains("недоступен"), "{message}");
+        assert!(!message.contains("totally unexpected"), "{message}");
     }
 
     /// Every kind produces Russian user text — and none of it leaks the raw
@@ -173,6 +213,7 @@ mod tests {
             ErrorKind::Timeout,
             ErrorKind::Unavailable,
             ErrorKind::Malformed,
+            ErrorKind::Unknown,
         ] {
             let error = EngineError {
                 kind,

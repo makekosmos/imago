@@ -95,7 +95,8 @@ fn status_decodes_engine_error_on_http_error_status() {
     let engine = engine_with_lock(&dir, port);
     let error = engine.status("health").unwrap_err();
     let _ = std::fs::remove_dir_all(&dir);
-    assert_eq!(error.kind, ErrorKind::Unavailable);
+    // "booting" is not a documented code — Unknown, not a guessed class.
+    assert_eq!(error.kind, ErrorKind::Unknown);
     assert_eq!(error.detail, "booting");
 }
 
