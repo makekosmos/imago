@@ -5,9 +5,9 @@
 //! `src/chrome.rs`), so every GPUI shell renders the same colors and
 //! sidebar/button chrome — Agenda's look is the reference.
 //!
-//! This crate is NOT part of the `@makekosmos/visuals` npm package: the
-//! tarball keeps shipping only Vue/TS artifacts, GPUI apps depend on this
-//! crate directly (git rev dependency — see `README.md`).
+//! The imago repo is Rust-only since KOS-319 (`@makekosmos/visuals` was
+//! removed); GPUI apps depend on this crate directly (git rev dependency —
+//! see `README.md`).
 //!
 //! * [`palettes`] — theme table (`THEMES`, [`ThemeDef`]); seeded values,
 //!   maintained by hand (no codegen pipeline).

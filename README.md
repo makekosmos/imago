@@ -1,29 +1,26 @@
-# @makekosmos/visuals
+# imago
 
-Shared Vue 3 components, composables, patterns, and theme tokens for Kosmos applications.
+The Kosmos GPUI design layer, as a Rust workspace:
+
+- `crates/imago-gpui` — palettes, theme tokens and runtime theme helpers plus
+  shared button/sidebar chrome.
+- `crates/mundus-gpui-kit` — view primitives and JSON accessors (`fields`),
+  shell widgets (`widgets`), theme glue (`theme`) and the Engine lock/RPC
+  client (`engine`, `engine_ws`, `engine_error`), merged in from the archived
+  `makekosmos/kosmos-gpui-kit` repository (KOS-319).
+
+Consumers (`cortex/manager-gpui`, `agenda-gpui`, `memoria-gpui`) depend on the
+crates by pinned git rev; both crates must come from the same rev so the
+lockfile holds a single imago source.
 
 ## Verification
 
-    pnpm install --frozen-lockfile
-    pnpm check
+    cargo fmt --all -- --check
+    cargo clippy --workspace --all-targets -- -D warnings
+    cargo test --workspace
 
-The aggregate check is the local quality gate: lint, formatting, exported
-TypeScript/API checks, library build, and packed-export smoke checks. The
-smoke check validates every declared JS/TS/CSS subpath and generated dist
-entry points before publishing.
+The same commands run as lefthook pre-push hooks. The pinned toolchain lives
+in `toolchain.json` (rust 1.95.0, same pin as cortex).
 
-Hosted GitHub Actions are disabled (KOS-76): no workflow runs on `push`,
-`pull_request`, tag push, or `schedule`. The quality and publish workflows are
-manual `workflow_dispatch` only, so publication happens exclusively on an
-explicit operator request. Done means `pnpm check` and the lefthook hooks pass
-locally; an absent or red hosted run is not a blocker.
-
-The check's library build creates a verified prepared-artifact marker. Publishing
-must consume that exact artifact with `IMAGO_PREPARED_ARTIFACT=required`; a
-standalone `npm pack` without that variable rebuilds safely during `prepack`.
-
-    pnpm check
-    IMAGO_PREPARED_ARTIFACT=required npm pack --dry-run
-
-Use pinned pnpm 12.4.1. Breaking public component/type changes require a release
-note and an explicit version decision.
+Hosted GitHub Actions are disabled (KOS-76): the Quality workflow is manual
+`workflow_dispatch` only, so the local gate is authoritative.
