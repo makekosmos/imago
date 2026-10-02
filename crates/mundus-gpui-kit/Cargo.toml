@@ -5,13 +5,15 @@ edition = "2021"
 description = "Shared GPUI crate — Imago theme tokens, shell chrome, view primitives and the Engine lock/RPC client (extracted from cortex/manager-gpui)"
 publish = false
 
-# Dependency pins MUST stay identical to cortex/manager-gpui: gpui is a
-# renamed gpui-kit at an exact version, imago-gpui is pinned by git rev.
+# Dependency pins MUST stay identical to the other workspace members and to
+# cortex/manager-gpui: gpui is a renamed gpui-kit at an exact version.
 # Mismatched gpui versions between consumers produce type errors at build.
+# imago-gpui resolves inside this workspace; consumers pinning this crate by
+# git rev get the same rev's imago-gpui through the workspace lockfile.
 [dependencies]
 gpui = { package = "gpui-kit", version = "=0.6.2" }
 gpui-component = "=0.6.2"
-imago-gpui = { git = "https://github.com/makekosmos/imago.git", rev = "b9dd284e70a56a151b525626c3b2463679cb8c9a" }
+imago-gpui = { path = "../imago-gpui" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 uuid = { version = "1.26.1", features = ["v4"] }
@@ -20,17 +22,3 @@ ureq = { version = "2.12", default-features = false, features = ["json"] }
 # version cortex resolves through tokio-tungstenite, so the dep tree stays
 # coherent. Blocking reads run on a consumer worker thread.
 tungstenite = "0.24"
-
-# Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
-# gpui make even modest UIs run at ~20fps (mirrors manager-gpui).
-[profile.dev]
-opt-level = 3
-
-[profile.dev.package."*"]
-opt-level = 3
-debug-assertions = false
-overflow-checks = false
-
-# Standalone crate: guards against being pulled into a parent workspace if
-# the checkout ever lives inside one (mirrors manager-gpui).
-[workspace]

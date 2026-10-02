@@ -1,10 +1,11 @@
-# Cargo workspace for Imago's native GPUI crates. The Vue/npm package
-# (@makekosmos/visuals) is unaffected — Rust lives only under crates/.
-# Consumers depend on members via git rev; cargo resolves packages inside
-# this workspace.
+# Cargo workspace for the Imago GPUI design layer: imago-gpui (palettes and
+# theme tokens) plus mundus-gpui-kit (widgets, shell chrome, Engine client,
+# merged in from the archived kosmos-gpui-kit repo under KOS-319). Consumers
+# depend on members via git rev; cargo resolves packages inside this
+# workspace.
 [workspace]
 resolver = "2"
-members = ["crates/imago-gpui"]
+members = ["crates/imago-gpui", "crates/mundus-gpui-kit"]
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.

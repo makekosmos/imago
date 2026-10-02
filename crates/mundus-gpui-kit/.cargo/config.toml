@@ -1,4 +1,0 @@
-# imago-gpui is a private git dependency — fetch through the git CLI so the
-# system credential manager authenticates (mirrors cortex/.cargo/config.toml).
-[net]
-git-fetch-with-cli = true
