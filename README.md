@@ -19,8 +19,8 @@ lockfile holds a single imago source.
     cargo clippy --workspace --all-targets -- -D warnings
     cargo test --workspace
 
-The same commands run as lefthook pre-push hooks. The pinned toolchain lives
-in `toolchain.json` (rust 1.95.0, same pin as cortex).
-
-Hosted GitHub Actions are disabled (KOS-76): the Quality workflow is manual
-`workflow_dispatch` only, so the local gate is authoritative.
+The same commands run as lefthook pre-push hooks and as the Quality workflow
+on every PR and push to main, on Linux, Windows and macOS — the platforms
+the consumers ship on. The pinned toolchain lives in `toolchain.json` and
+`rust-toolchain.toml` (rust 1.95.0, same pin as cortex); CI fails if they
+disagree.
