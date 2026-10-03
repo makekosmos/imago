@@ -1,0 +1,24 @@
+[package]
+name = "mundus-gpui-kit"
+version = "0.2.0"
+edition = "2021"
+description = "Shared GPUI crate — Imago theme tokens, shell chrome, view primitives and the Engine lock/RPC client (extracted from cortex/manager-gpui)"
+publish = false
+
+# Dependency pins MUST stay identical to the other workspace members and to
+# cortex/manager-gpui: gpui is a renamed gpui-kit at an exact version.
+# Mismatched gpui versions between consumers produce type errors at build.
+# imago-gpui resolves inside this workspace; consumers pinning this crate by
+# git rev get the same rev's imago-gpui through the workspace lockfile.
+[dependencies]
+gpui = { package = "gpui-kit", version = "=0.6.2" }
+gpui-component = "=0.6.2"
+imago-gpui = { path = "../imago-gpui" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+uuid = { version = "1.26.1", features = ["v4"] }
+ureq = { version = "2.12", default-features = false, features = ["json"] }
+# Sync WS client for the Engine event socket (engine_ws) — same tungstenite
+# version cortex resolves through tokio-tungstenite, so the dep tree stays
+# coherent. Blocking reads run on a consumer worker thread.
+tungstenite = "0.24"

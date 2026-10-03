@@ -1,18 +1,23 @@
 name: Quality
 
-# KOS-76: hosted CI is disabled. The lefthook gates and `pnpm check` run
-# locally and are authoritative; this workflow is manual dispatch only.
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
 jobs:
-  quality:
-    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Secret scan
@@ -20,11 +25,77 @@ jobs:
         with:
           version: "3.97.1"
           extra_args: --results=verified,unknown
-      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-        with:
-          version: 12.4.1
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm audit
-      - run: pnpm check
+      - id: pins
+        shell: bash
+        run: echo "rust=$(node -p 'require("./toolchain.json").rust')" >> "$GITHUB_OUTPUT"
+      # toolchain.json is the pin consumers record in their BOM;
+      # rust-toolchain.toml is what rustup actually installs locally.
+      # They must name the same channel or the local gate and CI drift apart.
+      - name: Toolchain pins agree
+        shell: bash
+        run: >-
+          node -p 'const p=require("./toolchain.json").rust;
+          const m=require("fs").readFileSync("rust-toolchain.toml","utf8")
+            .match(/channel\s*=\s*"([^"]+)"/);
+          if(!m||m[1]!==p) throw new Error("rust-toolchain.toml channel "+(m&&m[1])+" != toolchain.json "+p);
+          "channel="+p'
+      - name: Install Rust toolchain
+        shell: bash
+        run: rustup toolchain install "$RUST_VERSION" --profile minimal --component rustfmt --component clippy
+        env:
+          RUST_VERSION: ${{ steps.pins.outputs.rust }}
+      - run: cargo +"$RUST_VERSION" fmt --all -- --check
+        env:
+          RUST_VERSION: ${{ steps.pins.outputs.rust }}
       - name: Actionlint
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
+
+  build:
+    name: Check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - os: macos-15
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          rustup toolchain install "$(node -p 'require("./toolchain.json").rust')" --profile minimal --component rustfmt --component clippy
+          rustup default "$(node -p 'require("./toolchain.json").rust')"
+          rustup target add "$BUILD_TARGET"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+          save-if: ${{ github.event_name != 'pull_request' }}
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libvulkan1
+      - name: macOS Metal compiler
+        if: runner.os == 'macOS'
+        run: |
+          if ! xcrun --find metal; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+      - name: Formatting
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - name: Tests
+        run: cargo test --locked --workspace --target "$BUILD_TARGET"

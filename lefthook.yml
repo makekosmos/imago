@@ -2,9 +2,11 @@ glob_matcher: doublestar
 
 pre-commit:
   commands:
-    quality:
-      run: pnpm check:quick
+    format:
+      run: cargo fmt --all -- --check
 pre-push:
   commands:
-    verification:
-      run: pnpm check
+    clippy:
+      run: cargo clippy --workspace --all-targets -- -D warnings
+    tests:
+      run: cargo test --workspace

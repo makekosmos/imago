@@ -1,9 +1,8 @@
 # imago-gpui
 
-Shared visual core for Kosmos **GPUI** apps (Rust), living in the Imago
-monorepo next to the Vue design system — but **not inside it**: the
-`@makekosmos/visuals` npm tarball keeps shipping only Vue/TS artifacts, and
-GPUI apps depend on this crate directly.
+Shared visual core for Kosmos **GPUI** apps (Rust). Since KOS-319 the Imago
+repo is Rust-only — the `@makekosmos/visuals` Vue/TS library was removed —
+and GPUI apps depend on this crate directly.
 
 Palette, theme helpers and chrome were seeded from agenda-gpui
 (`src/palettes.rs`, `src/theme.rs`, `src/chrome.rs`), so GPUI shells render
@@ -21,8 +20,9 @@ pipeline** — `src/palettes.rs` is a normal source file, edited by hand.
 
 ## Depending on it
 
-The repo root has a Cargo workspace (`members = ["crates/imago-gpui"]`), so
-consumers use a git dependency pinned by rev:
+The repo root has a Cargo workspace (`members = ["crates/*"]`), so
+consumers use a git dependency pinned by rev — the same rev as
+`mundus-gpui-kit` when both are used:
 
 ```toml
 imago-gpui = { git = "https://github.com/makekosmos/imago.git", rev = "<sha>" }
@@ -52,8 +52,8 @@ does not install them.
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
 
-(From the repo root; the workspace contains only this crate.)
+(From the repo root.)
