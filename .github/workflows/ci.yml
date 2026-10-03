@@ -37,8 +37,8 @@ jobs:
           node -p 'const p=require("./toolchain.json").rust;
           const m=require("fs").readFileSync("rust-toolchain.toml","utf8")
             .match(/channel\s*=\s*"([^"]+)"/);
-          if(!m||m[1]!==p) throw new Error(`rust-toolchain.toml channel ${m&&m[1]} != toolchain.json ${p}`);
-          `channel=${p}`'
+          if(!m||m[1]!==p) throw new Error("rust-toolchain.toml channel "+(m&&m[1])+" != toolchain.json "+p);
+          "channel="+p'
       - name: Install Rust toolchain
         shell: bash
         run: rustup toolchain install "$RUST_VERSION" --profile minimal --component rustfmt --component clippy
