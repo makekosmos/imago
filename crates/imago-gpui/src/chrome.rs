@@ -143,12 +143,10 @@ pub fn caption_button(
                 button.bg(rgba(FG(), 0.10))
             }
         })
-        .child(
-            gpui::svg()
-                .path(path)
-                .size(px(14.))
-                .text_color(rgba(FG(), 0.82)),
-        )
+        // The glyph inherits the button's text_color — pinning it here
+        // would keep the close ✕ dark on the red hover background where
+        // the parent flips it to white.
+        .child(gpui::svg().path(path).size(px(14.)))
         .window_control_area(area)
 }
 

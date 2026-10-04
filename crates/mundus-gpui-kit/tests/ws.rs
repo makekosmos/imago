@@ -234,3 +234,37 @@ fn next_event_survives_server_ping() {
     stub.join().unwrap();
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// If the server accepts the upgrade but never answers the hello frame,
+/// `subscribe` must not block forever — the HTTP surface already bounds
+/// every request at 15s; the handshake needs the same bound or the
+/// caller's worker thread wedges for the life of the process.
+#[test]
+fn subscribe_times_out_when_server_never_answers_hello() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        let (stream, _) = listener.accept().unwrap();
+        let mut socket = tungstenite::accept(stream).unwrap();
+        // Read the hello, then go silent — never send hello_ok.
+        let _ = socket.read();
+        std::thread::sleep(std::time::Duration::from_secs(120));
+    });
+    let (engine, dir) = engine_with_ws_lock(port);
+    let started = std::time::Instant::now();
+    let error = match engine.subscribe() {
+        Err(error) => error,
+        Ok(_) => panic!("subscribe must not succeed without hello_ok"),
+    };
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(60),
+        "subscribe blocked indefinitely: {:?}",
+        started.elapsed()
+    );
+    assert_eq!(
+        error.kind,
+        mundus_gpui_kit::engine_error::ErrorKind::Timeout,
+        "unexpected: {error}"
+    );
+}

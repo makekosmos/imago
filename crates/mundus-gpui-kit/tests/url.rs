@@ -14,6 +14,9 @@ fn open_url_rejects_non_http_schemes() {
     assert!(invalid_url_error("javascript:alert(1)"));
     assert!(invalid_url_error("example.com"));
     assert!(invalid_url_error(""));
+    // Scheme without an authority is not a URL the OS can open.
+    assert!(invalid_url_error("https://"));
+    assert!(invalid_url_error("http://"));
 }
 
 #[test]
