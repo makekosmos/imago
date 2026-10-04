@@ -64,6 +64,9 @@ pub fn varr<'a>(v: &'a Value, key: &str) -> &'a [Value] {
 }
 
 pub fn fmt_bytes(n: f64) -> String {
+    // Engine JSON can carry negative/NaN values for unknown sizes — clamp
+    // to 0 rather than render "-512 Б"/"NaN Б".
+    let n = if n.is_finite() && n > 0.0 { n } else { 0.0 };
     if n >= 1_073_741_824.0 {
         format!("{:.1} ГБ", n / 1_073_741_824.0)
     } else if n >= 1_048_576.0 {
@@ -253,8 +256,19 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{fmt_ms, vstr};
+    use super::{fmt_bytes, fmt_ms, vstr};
     use serde_json::json;
+
+    /// Byte counts come from Engine JSON — a negative or NaN value must
+    /// not render "-512 Б"/"NaN Б" on screen; absent data shows "0 Б".
+    #[test]
+    fn fmt_bytes_sanitizes_negative_and_nan() {
+        assert_eq!(fmt_bytes(-512.0), "0 Б");
+        assert_eq!(fmt_bytes(f64::NAN), "0 Б");
+        assert_eq!(fmt_bytes(f64::NEG_INFINITY), "0 Б");
+        assert_eq!(fmt_bytes(0.0), "0 Б");
+        assert_eq!(fmt_bytes(1536.0), "2 КБ");
+    }
 
     /// JSON `null` must render like a missing key ("") — not the literal
     /// string "null" in the UI.
