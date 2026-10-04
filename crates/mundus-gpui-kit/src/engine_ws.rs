@@ -10,11 +10,17 @@
 //! The server answers `{"kind":"hello_ok"}` — or `hello_error` with a code —
 //! then streams `{"event": ...}` text frames to every connected client.
 use serde_json::{json, Value};
-use std::net::TcpStream;
+use std::net::{SocketAddr, TcpStream};
+use std::time::Duration;
 use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
 
 use crate::engine::{Engine, CLIENT_CLASS};
 use crate::engine_error::{EngineError, ErrorKind};
+
+/// Same bound the HTTP agent applies (`agent()`): connect, the WS upgrade
+/// and the hello handshake must not block a worker thread forever when the
+/// peer accepts and then goes silent.
+const IO_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// Blocking event stream on a dedicated worker thread (the socket read
 /// blocks, so never poll it from the UI thread). `next_event` returns
@@ -36,10 +42,27 @@ impl Engine {
                 "engine.lock.json has no ws_port",
             ));
         }
-        let (mut socket, _response) =
-            tungstenite::connect(format!("ws://127.0.0.1:{}/", lock.ws_port)).map_err(|e| {
-                EngineError::local(ErrorKind::Transport, format!("ws connect failed: {e}"))
-            })?;
+        let addr: SocketAddr = format!("127.0.0.1:{}", lock.ws_port).parse().map_err(|e| {
+            EngineError::local(ErrorKind::Transport, format!("ws addr invalid: {e}"))
+        })?;
+        let stream = TcpStream::connect_timeout(&addr, IO_TIMEOUT).map_err(|e| {
+            EngineError::local(ErrorKind::Transport, format!("ws connect failed: {e}"))
+        })?;
+        // The upgrade + hello legs share the HTTP agent's bound — a peer
+        // that accepts and stays silent must not wedge the caller's worker
+        // thread. Cleared after hello_ok: the event stream itself is a
+        // long-lived blocking read by design.
+        stream.set_read_timeout(Some(IO_TIMEOUT)).map_err(|e| {
+            EngineError::local(ErrorKind::Transport, format!("ws config failed: {e}"))
+        })?;
+        let (mut socket, _response) = tungstenite::client(
+            format!("ws://{addr}/"),
+            MaybeTlsStream::Plain(stream),
+        )
+        .map_err(|e| match e {
+            tungstenite::handshake::HandshakeError::Failure(e) => ws_error("ws handshake", e),
+            other => EngineError::local(ErrorKind::Transport, format!("ws handshake: {other}")),
+        })?;
         let hello = json!({
             "kind": "hello",
             // Same contract version the HTTP client sends in
@@ -53,7 +76,7 @@ impl Engine {
         });
         socket
             .send(Message::text(hello.to_string()))
-            .map_err(|e| EngineError::local(ErrorKind::Transport, format!("hello send: {e}")))?;
+            .map_err(|e| ws_error("hello send", e))?;
         loop {
             match socket.read() {
                 Ok(Message::Text(text)) => {
@@ -61,7 +84,14 @@ impl Engine {
                         EngineError::local(ErrorKind::Malformed, format!("hello not json: {e}"))
                     })?;
                     match value.get("kind").and_then(Value::as_str) {
-                        Some("hello_ok") => return Ok(EventStream { socket }),
+                        Some("hello_ok") => {
+                            // Streaming reads block indefinitely again —
+                            // events are pushed, silence is not a failure.
+                            if let MaybeTlsStream::Plain(stream) = socket.get_mut() {
+                                let _ = stream.set_read_timeout(None);
+                            }
+                            return Ok(EventStream { socket });
+                        }
                         Some("hello_error") => {
                             let detail = value
                                 .get("message")
@@ -90,16 +120,26 @@ impl Engine {
                     let _ = socket.flush();
                     return Err(EngineError::local(ErrorKind::Transport, "socket closed"));
                 }
-                Err(error) => {
-                    return Err(EngineError::local(
-                        ErrorKind::Transport,
-                        format!("socket error: {error}"),
-                    ));
-                }
+                Err(error) => return Err(ws_error("socket error", error)),
                 Ok(_) => {}
             }
         }
     }
+}
+
+/// A socket read timeout surfaces as `WouldBlock` (Unix `SO_RCVTIMEO`) or
+/// `TimedOut` (Windows) — both mean the handshake bound expired, which the
+/// Timeout kind reports honestly instead of "socket error".
+fn ws_error(context: &str, error: tungstenite::Error) -> EngineError {
+    if let tungstenite::Error::Io(e) = &error {
+        if matches!(
+            e.kind(),
+            std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+        ) {
+            return EngineError::local(ErrorKind::Timeout, format!("{context}: timed out"));
+        }
+    }
+    EngineError::local(ErrorKind::Transport, format!("{context}: {error}"))
 }
 
 impl EventStream {
