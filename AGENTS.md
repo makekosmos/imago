@@ -11,11 +11,11 @@ Imago is the single Kosmos GPUI design layer — a Rust-only workspace.
   `engine_ws`, `engine_error`) — merged in from the archived
   `makekosmos/kosmos-gpui-kit` repo (KOS-319), faithful extraction only: no
   API redesign vs the `cortex/manager-gpui` originals.
+- `crates/gpui-pre`, `crates/gpui-pre-windows`: vendored gpui snapshots with
+  local patches (KOS-328). Not workspace members; consumers pull them via
+  `[patch.crates-io]` git rev. Patch notes: `crates/gpui-pre/PATCH.md`.
 - `toolchain.json`: pinned Rust toolchain, identical to cortex's.
 - `.github/workflows/ci.yml`, `lefthook.yml`: the Quality gate.
-
-The Vue/TS library `@makekosmos/visuals` was removed under KOS-319; nothing
-in this repo is published to npm anymore.
 
 ## Setup and verification
 
