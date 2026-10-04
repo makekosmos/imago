@@ -15,7 +15,7 @@ use gpui::{
 use gpui_component::scroll::{Scrollable, ScrollableElement};
 use gpui_component::{Icon, Sizable};
 
-use crate::theme::{c, rgba, BG, FG, SIDEBAR_DIVIDER};
+use crate::theme::{c, rgba, FG, SIDEBAR_BG, SIDEBAR_DIVIDER};
 
 /// Sidebar width shared by Agenda/Manager (`SIDEBAR_W` in both shells).
 pub const SIDEBAR_W: f32 = 240.0;
@@ -31,7 +31,7 @@ pub fn sidebar() -> Div {
         .w(px(SIDEBAR_W))
         .h_full()
         .flex_shrink_0()
-        .bg(c(BG()))
+        .bg(c(SIDEBAR_BG()))
         .border_r_1()
         .border_color(c(SIDEBAR_DIVIDER()))
         .flex()
@@ -284,4 +284,31 @@ pub fn sidebar_item(
     active: bool,
 ) -> SidebarItem {
     SidebarItem::new(id).icon(icon).label(label).active(active)
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui::Styled;
+
+    use crate::theme::{c, BG, SIDEBAR_BG};
+
+    /// The sidebar shell fills with `sidebar_bg` — a step darker than the
+    /// app `bg` (gpui-component's `sidebar` token and agenda's
+    /// `sidebar_surface()` resolve to the same palette slot).
+    #[test]
+    fn sidebar_fill_uses_sidebar_bg() {
+        assert_ne!(
+            SIDEBAR_BG(),
+            BG(),
+            "sidebar_bg must differ from bg or this test proves nothing"
+        );
+        let mut el = super::sidebar();
+        let fill = el
+            .style()
+            .background
+            .as_ref()
+            .and_then(|fill| fill.color())
+            .and_then(|bg| bg.as_solid());
+        assert_eq!(fill, Some(c(SIDEBAR_BG())));
+    }
 }
