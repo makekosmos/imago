@@ -81,8 +81,7 @@ impl Engine {
             EngineError::local(ErrorKind::Malformed, format!("response not json: {e}"))
         })?;
         if value["ok"] != true {
-            let detail = value["error"].as_str().unwrap_or("unavailable");
-            return Err(EngineError::engine(detail));
+            return Err(EngineError::engine(&wire_error(&value)));
         }
         Ok(value)
     }
@@ -132,22 +131,27 @@ fn decode(response: ureq::Response) -> Result<Value, EngineError> {
         .into_json()
         .map_err(|e| EngineError::local(ErrorKind::Malformed, format!("response not json: {e}")))?;
     if value["ok"] != true {
-        let detail = value
-            .get("error")
-            .map(|e| match e {
-                Value::String(s) => s.clone(),
-                other => other
-                    .get("message")
-                    .and_then(Value::as_str)
-                    .map(str::to_string)
-                    .unwrap_or_else(|| other.to_string()),
-            })
-            .unwrap_or_else(|| "unavailable".into());
         // The wire code classifies the rejection; `message()` renders the
         // Russian text, `detail` stays in the app log.
-        return Err(EngineError::engine(&detail));
+        return Err(EngineError::engine(&wire_error(&value)));
     }
     Ok(value.get("data").cloned().unwrap_or(Value::Null))
+}
+
+/// The `error` field of a `{ok:false}` reply: a plain string code, or an
+/// object carrying `message` (both shapes appear on the wire).
+fn wire_error(value: &Value) -> String {
+    value
+        .get("error")
+        .map(|e| match e {
+            Value::String(s) => s.clone(),
+            other => other
+                .get("message")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+                .unwrap_or_else(|| other.to_string()),
+        })
+        .unwrap_or_else(|| "unavailable".into())
 }
 
 fn agent() -> ureq::Agent {

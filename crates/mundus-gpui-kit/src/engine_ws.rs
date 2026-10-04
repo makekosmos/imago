@@ -93,9 +93,13 @@ impl Engine {
                             return Ok(EventStream { socket });
                         }
                         Some("hello_error") => {
+                            // `detail` keeps the wire `code` for the app
+                            // log (engine_error.rs contract); `message` is
+                            // human prose — the fallback, never the class.
                             let detail = value
-                                .get("message")
+                                .get("code")
                                 .and_then(Value::as_str)
+                                .or_else(|| value.get("message").and_then(Value::as_str))
                                 .unwrap_or("handshake rejected");
                             return Err(EngineError::engine(detail));
                         }
