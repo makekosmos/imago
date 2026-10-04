@@ -119,6 +119,13 @@ pub fn mix(top: u32, a: f32, bottom: u32) -> Hsla {
 }
 
 fn mix_u32(top: u32, a: f32, bottom: u32) -> u32 {
+    // Factors outside [0,1] (animation overshoot, NaN) would push a channel
+    // past 255 and bleed into its neighbor — clamp instead of corrupting.
+    let a = if a.is_finite() {
+        a.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let tr = ((top >> 16) & 0xff) as f32;
     let tg = ((top >> 8) & 0xff) as f32;
     let tb = (top & 0xff) as f32;
@@ -138,8 +145,13 @@ pub fn rgba(hex: u32, a: f32) -> Hsla {
     col
 }
 
-/// lerp two opaque colors, t ∈ [0,1].
+/// lerp two opaque colors, t ∈ [0,1] (clamped — see mix_u32).
 pub fn lerp(a: u32, b: u32, t: f32) -> Hsla {
+    let t = if t.is_finite() {
+        t.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let (r1, g1, b1) = ((a >> 16) & 0xff, (a >> 8) & 0xff, a & 0xff);
     let (r2, g2, b2) = ((b >> 16) & 0xff, (b >> 8) & 0xff, b & 0xff);
     let r = (r1 as f32 + (r2 as f32 - r1 as f32) * t).round() as u32;
@@ -433,4 +445,22 @@ fn colors(p: &Palette) -> ThemeConfigColors {
     cc.overlay = hexa(black, 0.45);
     cc.window_border = hex(p.sidebar_divider);
     cc
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// mix/lerp factors outside [0,1] must clamp — a channel value >255
+    /// (animation overshoot passing t = 1.2) shifts into the neighboring
+    /// channel and silently corrupts the color.
+    #[test]
+    fn mix_and_lerp_clamp_out_of_range_factors() {
+        assert_eq!(mix(0x102030, 2.0, 0xff0000), c(0x102030));
+        assert_eq!(mix(0x102030, -1.0, 0xff0000), c(0xff0000));
+        assert_eq!(lerp(0x000000, 0xffffff, 2.0), c(0xffffff));
+        assert_eq!(lerp(0x123456, 0x0000ff, -0.5), c(0x123456));
+        assert_eq!(mix(0x102030, 0.5, 0x405060), c(0x283848));
+        assert_eq!(lerp(0x000000, 0xffffff, f32::NAN), c(0x000000));
+    }
 }
