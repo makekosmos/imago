@@ -118,6 +118,31 @@ fn status_extracts_object_error_message() {
     assert_eq!(error.detail, "forbidden");
 }
 
+/// A `{ok:false}` reply that carries no `error` code at all is a malformed
+/// reply — reporting it as "Engine временно недоступен" would lie about a
+/// reachability problem the way a guessed class would.
+#[test]
+fn rpc_malformed_when_error_reply_has_no_code() {
+    let dir = std::env::temp_dir().join(format!("kgk-noerr-{}", std::process::id()));
+    let port = serve_once("HTTP/1.1 500 Internal Server Error", r#"{"ok":false}"#);
+    let engine = engine_with_lock(&dir, port);
+    let error = engine.rpc("demo.op", json!({})).unwrap_err();
+    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(error.kind, ErrorKind::Malformed, "unexpected: {error}");
+    assert!(!error.message().contains("недоступен"));
+}
+
+/// Same shape on the status surface — `error: null` is not a code either.
+#[test]
+fn status_malformed_when_error_field_is_null() {
+    let dir = std::env::temp_dir().join(format!("kgk-nullerr-{}", std::process::id()));
+    let port = serve_once("HTTP/1.1 400 Bad Request", r#"{"ok":false,"error":null}"#);
+    let engine = engine_with_lock(&dir, port);
+    let error = engine.status("health").unwrap_err();
+    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(error.kind, ErrorKind::Malformed, "unexpected: {error}");
+}
+
 // --- data_dir / host_user_data candidate ordering ------------------------
 
 /// Env is process-global — discovery tests that set vars must hold this
@@ -290,6 +315,26 @@ fn data_dir_env_override_without_lock() {
     let (m, c) = (tmp_dir("g-m"), tmp_dir("g-c"));
     redirect_env(Some(&m), None, Some(&c));
     assert_eq!(data_dir().unwrap(), m);
+}
+
+/// An empty HOME/XDG_CONFIG_HOME is unset, not a base dir — treating ""
+/// as a base yields cwd-relative candidates like `.config/Mundus`, so the
+/// client could read a lock file out of whatever directory the app was
+/// launched from.
+#[test]
+fn data_dir_ignores_empty_config_env_vars() {
+    let _hold = ENV_LOCK.lock().unwrap();
+    let _env = env_restore();
+    redirect_env(None, None, None);
+    std::env::set_var("HOME", "");
+    std::env::set_var("XDG_CONFIG_HOME", "");
+    std::env::set_var("APPDATA", "");
+    let error = data_dir().unwrap_err();
+    assert_eq!(error.kind, ErrorKind::NotRunning, "unexpected: {error}");
+    assert!(
+        host_user_data().is_none(),
+        "empty config env must not yield a relative user-data dir"
+    );
 }
 
 /// Nothing resolvable at all → the only remaining failure mode.

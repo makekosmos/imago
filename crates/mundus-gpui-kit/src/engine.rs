@@ -81,7 +81,7 @@ impl Engine {
             EngineError::local(ErrorKind::Malformed, format!("response not json: {e}"))
         })?;
         if value["ok"] != true {
-            return Err(EngineError::engine(&wire_error(&value)));
+            return Err(reply_error(&value));
         }
         Ok(value)
     }
@@ -131,27 +131,37 @@ fn decode(response: ureq::Response) -> Result<Value, EngineError> {
         .into_json()
         .map_err(|e| EngineError::local(ErrorKind::Malformed, format!("response not json: {e}")))?;
     if value["ok"] != true {
-        // The wire code classifies the rejection; `message()` renders the
-        // Russian text, `detail` stays in the app log.
-        return Err(EngineError::engine(&wire_error(&value)));
+        return Err(reply_error(&value));
     }
     Ok(value.get("data").cloned().unwrap_or(Value::Null))
 }
 
+/// The rejection a `{ok:false}` body carries. `error` present → classify the
+/// wire code (`message()` renders the Russian text, `detail` stays in the
+/// app log). Absent/null → the reply shape itself is off-spec: Malformed,
+/// not a guessed class like "unavailable" that lies about reachability.
+fn reply_error(value: &Value) -> EngineError {
+    match wire_error(value) {
+        Some(code) => EngineError::engine(&code),
+        None => EngineError::local(ErrorKind::Malformed, "{ok:false} reply with no error code"),
+    }
+}
+
 /// The `error` field of a `{ok:false}` reply: a plain string code, or an
 /// object carrying `message` (both shapes appear on the wire).
-fn wire_error(value: &Value) -> String {
-    value
-        .get("error")
-        .map(|e| match e {
-            Value::String(s) => s.clone(),
-            other => other
-                .get("message")
-                .and_then(Value::as_str)
-                .map(str::to_string)
-                .unwrap_or_else(|| other.to_string()),
-        })
-        .unwrap_or_else(|| "unavailable".into())
+fn wire_error(value: &Value) -> Option<String> {
+    let error = value.get("error")?;
+    if error.is_null() {
+        return None;
+    }
+    Some(match error {
+        Value::String(s) => s.clone(),
+        other => other
+            .get("message")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .unwrap_or_else(|| other.to_string()),
+    })
 }
 
 fn agent() -> ureq::Agent {
@@ -164,15 +174,15 @@ fn agent() -> ureq::Agent {
 /// Per-OS config base the Engine data dir hangs off (`%APPDATA%`,
 /// `~/Library/Application Support`, `$XDG_CONFIG_HOME`/`~/.config`).
 fn config_dir() -> Option<PathBuf> {
+    // Empty env vars are unset, like in `env_dir` — a "" base would turn
+    // into cwd-relative candidates (`Mundus`, `.config/Mundus`), pointing
+    // discovery at whatever directory the app was launched from.
     #[cfg(target_os = "windows")]
-    let base = std::env::var_os("APPDATA").map(PathBuf::from);
+    let base = env_dir("APPDATA");
     #[cfg(target_os = "macos")]
-    let base =
-        std::env::var_os("HOME").map(|v| PathBuf::from(v).join("Library/Application Support"));
+    let base = env_dir("HOME").map(|v| v.join("Library/Application Support"));
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    let base = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|v| PathBuf::from(v).join(".config")));
+    let base = env_dir("XDG_CONFIG_HOME").or_else(|| env_dir("HOME").map(|v| v.join(".config")));
     base
 }
 
