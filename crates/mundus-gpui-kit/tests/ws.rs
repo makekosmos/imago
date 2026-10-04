@@ -113,10 +113,33 @@ fn subscribe_surfaces_hello_error_message() {
         Ok(_) => panic!("subscribe must fail on hello_error"),
     };
     let _ = std::fs::remove_dir_all(&dir);
-    // The handshake `message` is the Engine's wire code — it stays in
-    // `detail` for the app log, not in the user-facing text.
-    assert_eq!(error.detail, "auth token does not match");
+    // `detail` carries the raw wire `code` for the app log — not the
+    // human prose and never the user-facing text.
+    assert_eq!(error.detail, "INVALID_TOKEN");
+    assert!(!error.message().contains("INVALID_TOKEN"));
     assert!(!error.message().contains("auth token"));
+    stub.join().unwrap();
+}
+
+/// A `hello_error` with no `code` still records the `message` — the log
+/// must never lose both.
+#[test]
+fn subscribe_falls_back_to_hello_error_message() {
+    let (port, stub) = ws_stub(|mut socket, hello| {
+        assert_hello(&hello);
+        socket
+            .send(tungstenite::Message::text(
+                r#"{"kind":"hello_error","message":"auth token does not match"}"#,
+            ))
+            .unwrap();
+    });
+    let (engine, dir) = engine_with_ws_lock(port);
+    let error = match engine.subscribe() {
+        Err(error) => error,
+        Ok(_) => panic!("subscribe must fail on hello_error"),
+    };
+    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(error.detail, "auth token does not match");
     stub.join().unwrap();
 }
 
