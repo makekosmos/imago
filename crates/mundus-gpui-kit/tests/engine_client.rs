@@ -100,6 +100,24 @@ fn status_decodes_engine_error_on_http_error_status() {
     assert_eq!(error.detail, "booting");
 }
 
+/// Engine errors also arrive object-shaped (`{"error":{"message":...}}`) —
+/// `status` must extract the message like `decode` does instead of
+/// collapsing every object error to the "unavailable" kind, which tells
+/// the user a lie ("Engine временно недоступен").
+#[test]
+fn status_extracts_object_error_message() {
+    let dir = std::env::temp_dir().join(format!("kgk-status-obj-{}", std::process::id()));
+    let port = serve_once(
+        "HTTP/1.1 403 Forbidden",
+        r#"{"ok":false,"error":{"message":"forbidden"}}"#,
+    );
+    let engine = engine_with_lock(&dir, port);
+    let error = engine.status("health").unwrap_err();
+    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(error.kind, ErrorKind::Forbidden);
+    assert_eq!(error.detail, "forbidden");
+}
+
 // --- data_dir / host_user_data candidate ordering ------------------------
 
 /// Env is process-global — discovery tests that set vars must hold this
