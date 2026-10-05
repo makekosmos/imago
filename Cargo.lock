@@ -2390,8 +2390,6 @@ dependencies = [
 [[package]]
 name = "gpui-pre"
 version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0437c0b83e636a92bd1a39fa1d05fb632ae671289537497b35871ffbe231b84"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -2839,8 +2837,6 @@ dependencies = [
 [[package]]
 name = "gpui-pre-windows"
 version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27662e65bfcf4445d2cccfad91f1570ec07f4b1b5de98400a9f207fd19c464cf"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3363,6 +3359,10 @@ dependencies = [
  "gpui-base",
  "gpui-component",
  "gpui-kit",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

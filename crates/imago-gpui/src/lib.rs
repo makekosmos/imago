@@ -16,6 +16,10 @@
 //!   install the palette into `gpui-component`.
 //! * [`chrome`] — sidebar shell/items and content titlebar (Agenda spec).
 //! * [`button`] — button variant helpers over `gpui-component::Button`.
+//! * [`settings`] — Cortex settings grid, cards, rows and scaled typography.
+//! * [`appearance`] — shared palette miniatures and accessible mode tiles.
+//! * [`toggle`] — animated settings switch with optional glass and haptics.
+//! * [`about`] — product hero and caller-supplied diagnostics.
 //!
 //! ```ignore
 //! gpui::application().run(|cx: &mut App| {
@@ -25,11 +29,19 @@
 //! });
 //! ```
 
+pub mod about;
+pub mod appearance;
+pub mod appearance_editor;
 pub mod assets;
 pub mod button;
 pub mod chrome;
 pub mod palettes;
+pub mod settings;
 pub mod theme;
+pub mod toggle;
 
 pub use palettes::{ThemeDef, THEMES};
 pub use theme::Palette;
+
+#[cfg(test)]
+mod settings_tests;

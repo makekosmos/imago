@@ -7,9 +7,15 @@
 resolver = "2"
 members = ["crates/imago-gpui", "crates/mundus-gpui-kit"]
 # Patched gpui revision shared by the GPUI apps (KOS-328): vendored crates.io
-# sources with local patches, consumed via [patch.crates-io] git rev — not
-# workspace members, so `cargo build` here never compiles gpui itself.
+# sources with local patches, consumed via [patch.crates-io] git rev by apps.
+# Not workspace members; local patches below enable shared UI tests here.
 exclude = ["crates/gpui-pre", "crates/gpui-pre-windows"]
+
+# Exercise shared controls against the same patched TestWindow used by apps.
+# Workspace patches do not propagate to consumers; their Git patches stay pinned.
+[patch.crates-io]
+gpui-pre = { path = "crates/gpui-pre" }
+gpui-pre-windows = { path = "crates/gpui-pre-windows" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.

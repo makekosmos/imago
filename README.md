@@ -3,7 +3,9 @@
 The Kosmos GPUI design layer, as a Rust workspace:
 
 - `crates/imago-gpui` — palettes, theme tokens and runtime theme helpers plus
-  shared button/sidebar chrome.
+  shared button/sidebar chrome, settings layouts, appearance previews,
+  switches and About/diagnostics blocks extracted from Cortex.
+  See [shared settings UI](docs/shared-settings.md) for API and local integration.
 - `crates/mundus-gpui-kit` — view primitives and JSON accessors (`fields`),
   shell widgets (`widgets`), theme glue (`theme`) and the Engine lock/RPC
   client (`engine`, `engine_ws`, `engine_error`), merged in from the archived
