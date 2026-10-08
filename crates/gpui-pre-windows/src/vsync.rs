@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use gpui::FrameRequestSource;
 use gpui_util::ResultExt;
 use windows::Win32::{
     Foundation::{HANDLE, HWND},
@@ -151,7 +152,7 @@ impl VSyncProvider {
         if std::env::var_os("AGENDA_FRAME_LOG").is_some() {
             eprintln!(
                 "[vsync] source={} refresh_hz={:.4} interval_ms={:.4}",
-                if use_clock && wait_for_clock.is_some() {
+                if compositor_clock {
                     "compositor-clock"
                 } else {
                     "dwm"
@@ -167,7 +168,7 @@ impl VSyncProvider {
         }
     }
 
-    pub(crate) fn wait_for_vsync(&self) {
+    pub(crate) fn wait_for_vsync(&self) -> FrameRequestSource {
         let vsync_start = Instant::now();
         let wait_succeeded = (self.f)();
         let elapsed = vsync_start.elapsed();
@@ -177,6 +178,9 @@ impl VSyncProvider {
         if !wait_succeeded || (!self.compositor_clock && elapsed < VSYNC_INTERVAL_THRESHOLD) {
             log::trace!("VSyncProvider::wait_for_vsync() took less time than expected");
             std::thread::sleep(self.interval.saturating_sub(elapsed));
+            FrameRequestSource::LocalSchedule
+        } else {
+            FrameRequestSource::NativeCallback
         }
     }
 }
@@ -262,5 +266,41 @@ mod tests {
             retrieve_duration(60_606, 10_000_000),
             Duration::from_nanos(6_060_600)
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn successful_compositor_wait_reports_native_callback() {
+        let provider = VSyncProvider {
+            interval: Duration::ZERO,
+            f: Box::new(|| {
+                std::thread::sleep(VSYNC_INTERVAL_THRESHOLD * 2);
+                true
+            }),
+            compositor_clock: true,
+        };
+
+        assert_eq!(
+            provider.wait_for_vsync(),
+            FrameRequestSource::NativeCallback
+        );
+    }
+
+    #[test]
+    fn failed_compositor_wait_reports_local_schedule_even_after_threshold() {
+        let provider = VSyncProvider {
+            interval: Duration::ZERO,
+            f: Box::new(|| {
+                std::thread::sleep(VSYNC_INTERVAL_THRESHOLD * 2);
+                false
+            }),
+            compositor_clock: true,
+        };
+
+        assert_eq!(provider.wait_for_vsync(), FrameRequestSource::LocalSchedule);
     }
 }

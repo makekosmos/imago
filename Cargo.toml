@@ -27,3 +27,13 @@ opt-level = 3
 opt-level = 3
 debug-assertions = false
 overflow-checks = false
+
+# Test windows expose `cx.debug_bounds` only when gpui records debug
+# selectors; upstream gates that on `all(debug_assertions, test-support)`,
+# and the blanket dev profile above turns dep assertions off. Re-enable them
+# just for gpui so `#[gpui::test]` UI probes keep working.
+[profile.dev.package.gpui-pre]
+debug-assertions = true
+
+[profile.dev.package.gpui-pre-macros]
+debug-assertions = true

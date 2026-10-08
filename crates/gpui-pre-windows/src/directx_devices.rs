@@ -70,7 +70,7 @@ impl DirectXDevices {
         // (nvwgf2umx 0xc0000005). The per-call cost is ~tens of ns.
         if let Ok(multithread) = device_context.cast::<ID3D11Multithread>() {
             unsafe {
-                multithread.SetMultithreadProtected(true);
+                let _ = multithread.SetMultithreadProtected(true);
             }
         }
 
