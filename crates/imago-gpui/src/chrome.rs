@@ -135,6 +135,7 @@ pub fn caption_button(
         .flex()
         .items_center()
         .justify_center()
+        .group(id)
         .text_color(rgba(FG(), 0.82))
         .hover(move |button| {
             if danger {
@@ -143,11 +144,40 @@ pub fn caption_button(
                 button.bg(rgba(FG(), 0.10))
             }
         })
-        // The glyph inherits the button's text_color — pinning it here
-        // would keep the close ✕ dark on the red hover background where
-        // the parent flips it to white.
-        .child(gpui::svg().path(path).size(px(14.)))
+        // Svg::paint requires its own text color; the parent color alone does
+        // not paint the glyph. Mirror the caption hover on the glyph as well.
+        .child(caption_glyph(id, path, danger))
         .window_control_area(area)
+}
+
+fn caption_glyph(id: &'static str, path: &'static str, danger: bool) -> gpui::Svg {
+    gpui::svg()
+        .path(path)
+        .size(px(14.))
+        .text_color(rgba(FG(), 0.82))
+        .group_hover(id, move |glyph| {
+            if danger {
+                glyph.text_color(c(0xffffff))
+            } else {
+                glyph
+            }
+        })
+}
+
+#[cfg(test)]
+mod caption_tests {
+    use super::*;
+
+    #[test]
+    fn caption_glyph_has_its_own_paint_color() {
+        for (id, path, danger) in [
+            ("win-min", "icons/window-min.svg", false),
+            ("win-close", "icons/status-x.svg", true),
+        ] {
+            let mut glyph = caption_glyph(id, path, danger);
+            assert_eq!(glyph.style().text.color, Some(rgba(FG(), 0.82)));
+        }
+    }
 }
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>;
