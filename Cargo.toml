@@ -13,9 +13,17 @@ exclude = ["crates/gpui-pre", "crates/gpui-pre-windows"]
 
 # Exercise shared controls against the same patched TestWindow used by apps.
 # Workspace patches do not propagate to consumers; their Git patches stay pinned.
+# exp-gpui-fast: gpui-kit/component/base 0.7.1 pin gpui-pre =0.3.8, the
+# snapshot longbridge/gpui-fast compat crates implement (retained rendering).
+# Local gpui-pre vendors are superseded on this branch — the a11y TestWindow
+# patch is NOT carried (see cortex REPORT), so a11y tests may regress.
 [patch.crates-io]
-gpui-pre = { path = "crates/gpui-pre" }
-gpui-pre-windows = { path = "crates/gpui-pre-windows" }
+gpui-pre = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
+gpui-pre-platform = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
+gpui-pre-macros = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
+gpui-pre-sum-tree = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
+gpui-pre-web = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
+gpui-pre-reqwest-client = { git = "https://github.com/longbridge/gpui-fast", rev = "edbd7641e9cc5afae84c542e04a13b3171489875" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.

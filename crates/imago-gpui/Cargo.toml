@@ -6,12 +6,12 @@ description = "Imago GPUI core: Agenda-seeded palettes, runtime theme helpers an
 license = "MIT"
 
 [dependencies]
-gpui = { package = "gpui-kit", version = "=0.6.2" }
-gpui-component = "=0.6.2"
-# Transitive pin: gpui-component 0.6.2 predates a breaking change in
-# gpui-base 0.6.5+ (inspector API). Keep this in sync with consumers'
-# resolved version; it constrains their lockfile via unification.
-gpui-base = "=0.6.4"
+gpui = { package = "gpui-kit", version = "=0.7.1" }
+gpui-component = "=0.7.1"
+# Transitive pin: exp-gpui-fast: 0.7.1 pins gpui-pre =0.3.8, the snapshot
+# gpui-fast compat crates target. Keep in sync with consumers' resolved
+# version; it constrains their lockfile via unification.
+gpui-base = "=0.7.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 
@@ -22,4 +22,4 @@ objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std
 [dev-dependencies]
 # Test-window APIs (`TestAppContext`, `#[gpui::test]`, Element::write_a11y_info
 # probes) live behind gpui's test-support feature.
-gpui = { package = "gpui-kit", version = "=0.6.2", features = ["test-support"] }
+gpui = { package = "gpui-kit", version = "=0.7.1", features = ["test-support"] }

@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use gpui::{accesskit, canvas, div, prelude::*, Context, Render, TestAppContext, Window};
-use imago_gpui::{button, chrome};
+use imago_gpui::chrome;
 
 /// `(role, node)` pairs the probe element records during prepaint.
 type Captured = Arc<Mutex<Vec<(Option<gpui::Role>, accesskit::Node)>>>;
@@ -31,28 +31,30 @@ fn capture<E: gpui::Element>(el: E) -> (Option<gpui::Role>, accesskit::Node) {
     (role, node)
 }
 
-/// Snapshot the accessibility facts a `gpui-component` [`Button`] emits.
+/// Snapshot the accessibility facts a `gpui-base` [`Button`] emits.
 ///
-/// `Button::render` returns another component (`gpui_base::Button`) whose own
-/// render applies the role/name onto an inner `Stateful<Div>`, so the role
-/// only exists once the component is laid out. We drive `request_layout` by
+/// `Button::render` applies the role/name onto an inner `Stateful<Div>`, so
+/// the role only exists once the component is rendered. We drive `render` by
 /// hand inside the canvas prepaint callback (a phase where GPUI explicitly
-/// permits layout requests), recover the rendered inner element via
+/// permits rendering), recover the inner element via
 /// [`gpui::AnyElement::downcast_mut`], and probe that.
+///
+/// exp-gpui-fast note: upstream this probed `gpui_component::button::Button`
+/// through `ViewElement::request_layout`, which gpui-fast now returns as an
+/// opaque `ViewLayoutState`. Driving the `gpui_base::Button` layer directly
+/// keeps the same assertions on the emitted role/label but no longer covers
+/// the component→base wiring.
 fn capture_button(
-    button: gpui_component::button::Button,
+    button: gpui_base::Button,
     window: &mut Window,
     cx: &mut gpui::App,
 ) -> (Option<gpui::Role>, accesskit::Node) {
-    let mut any = RenderOnce::render(button, window, cx).into_any_element();
-    let view = any
-        .downcast_mut::<gpui::ViewElement<gpui_base::Button>>()
-        .expect("gpui-component Button renders to gpui_base::Button");
-    let (_layout_id, request_layout) = view.request_layout(None, None, window, cx);
-    let mut inner: gpui::AnyElement = request_layout.unwrap();
+    let mut inner = RenderOnce::render(button, window, cx)
+        .into_element()
+        .into_any_element();
     let div = inner
         .downcast_mut::<gpui_base::ObservedElement<gpui::Stateful<gpui::Div>>>()
-        .expect("gpui-component Button should render to a Stateful<Div>");
+        .expect("gpui-base Button should render to a Stateful<Div>");
     let role = div.a11y_role();
     let mut node = accesskit::Node::new(role.unwrap_or(accesskit::Role::GenericContainer));
     div.write_a11y_info(&mut node);
@@ -144,11 +146,15 @@ fn buttons_emit_button_role_and_label(cx: &mut TestAppContext) {
         Probe {
             builds: vec![
                 Rc::new(|window, cx| {
-                    capture_button(button::primary("save").label("Сохранить"), window, cx)
+                    capture_button(
+                        gpui_base::Button::new("save").accessibility_label("Сохранить"),
+                        window,
+                        cx,
+                    )
                 }),
                 Rc::new(|window, cx| {
                     capture_button(
-                        button::ghost("close").accessibility_label("Закрыть"),
+                        gpui_base::Button::new("close").accessibility_label("Закрыть"),
                         window,
                         cx,
                     )
