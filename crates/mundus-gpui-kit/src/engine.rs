@@ -35,7 +35,19 @@ pub struct Engine {
 impl Engine {
     /// POST /v1/rpc. Params merge with `operation`/`_req_id` like the
     /// Electron engine-client does.
-    pub fn rpc(&self, operation: &str, mut params: Value) -> Result<Value, EngineError> {
+    pub fn rpc(&self, operation: &str, params: Value) -> Result<Value, EngineError> {
+        self.rpc_with_timeout(operation, params, Duration::from_secs(15))
+    }
+
+    /// `rpc` with a caller-chosen timeout — ops like
+    /// `dictation.speech.transcribe` (transcribe + paste of a long
+    /// recording) legitimately outlast the 15s default.
+    pub fn rpc_with_timeout(
+        &self,
+        operation: &str,
+        mut params: Value,
+        timeout: Duration,
+    ) -> Result<Value, EngineError> {
         let lock = self.lock()?;
         if !params.is_object() {
             return Err(EngineError::local(
@@ -48,7 +60,7 @@ impl Engine {
         // `X-Kosmos-*` is the Engine wire protocol — running Engines accept
         // only these header names; the brand rename does not retag the RPC.
         let response = or_status_body(
-            agent()
+            agent(timeout)
                 .post(&format!("http://127.0.0.1:{}/v1/rpc", lock.http_port))
                 .set("Authorization", &format!("Bearer {}", lock.auth_token))
                 .set("X-Kosmos-Api-Version", "1.0.0")
@@ -66,7 +78,7 @@ impl Engine {
     pub fn status(&self, path: &str) -> Result<Value, EngineError> {
         let lock = self.lock()?;
         let response = or_status_body(
-            agent()
+            agent(Duration::from_secs(15))
                 .get(&format!("http://127.0.0.1:{}/v1/{path}", lock.http_port))
                 .set("Authorization", &format!("Bearer {}", lock.auth_token))
                 .set("X-Kosmos-Api-Version", "1.0.0")
@@ -164,9 +176,9 @@ fn wire_error(value: &Value) -> Option<String> {
     })
 }
 
-fn agent() -> ureq::Agent {
+fn agent(timeout: Duration) -> ureq::Agent {
     ureq::AgentBuilder::new()
-        .timeout(Duration::from_secs(15))
+        .timeout(timeout)
         .redirects(0)
         .build()
 }
