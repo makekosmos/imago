@@ -6,6 +6,12 @@
 [workspace]
 resolver = "2"
 members = ["crates/imago-gpui", "crates/mundus-gpui-kit"]
+exclude = ["crates/gpui-fast"]
+
+# Local gpui-fast fork for Kosmos test-platform behavior. Consumers pin this
+# same Imago revision and apply the same patch override in their manifests.
+[patch.crates-io]
+gpui-fast = { path = "crates/gpui-fast" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.
@@ -18,7 +24,10 @@ opt-level = 3
 debug-assertions = false
 overflow-checks = false
 
-# Test windows expose `cx.debug_bounds` only when gpui records debug
-# selectors; upstream gates that on `all(debug_assertions, test-support)`,
-# and the blanket dev profile above turns dep assertions off. Re-enable them
-# just for gpui so `#[gpui::test]` UI probes keep working.
+# UI probes need debug selectors in test-support builds; the blanket dev
+# profile above disables dependency assertions, so re-enable them for gpui-fast.
+[profile.dev.package.gpui-fast]
+debug-assertions = true
+
+[profile.dev.package.gpui-fast-macros]
+debug-assertions = true
