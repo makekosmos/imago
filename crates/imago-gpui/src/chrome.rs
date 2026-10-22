@@ -99,6 +99,13 @@ pub fn window_controls() -> Div {
             "Свернуть",
         ),
         (
+            "win-max",
+            "icons/window-max.svg",
+            WindowControlArea::Max,
+            false,
+            "Развернуть",
+        ),
+        (
             "win-close",
             "icons/status-x.svg",
             WindowControlArea::Close,
