@@ -4,6 +4,7 @@ use crate::{
     settings::UiStyle,
     theme::{c, rgba, Palette},
 };
+use ::gpui::IntoElement;
 use ::gpui::{prelude::*, *};
 use std::rc::Rc;
 

@@ -3,6 +3,7 @@
 //! Interaction, focus, disabled semantics and accessibility are delegated to
 //! `gpui_base::Switch`. Glass is opt-in; colors otherwise follow Imago's theme.
 use crate::theme::{self, mix, rgba};
+use ::gpui::IntoElement;
 use ::gpui::{prelude::*, *};
 use gpui_component::Disableable;
 use std::{rc::Rc, time::Instant};

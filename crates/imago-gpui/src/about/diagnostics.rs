@@ -3,6 +3,7 @@ use crate::{
     settings::{section_group, UiStyle, INSET},
     theme::{c, rgba, DESTRUCTIVE, SUCCESS},
 };
+use ::gpui::IntoElement;
 use ::gpui::{prelude::*, AnimationExt, *};
 use std::{rc::Rc, time::Duration};
 
