@@ -1,0 +1,21 @@
+[package]
+name = "window-chrome-demo"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "window_chrome"
+path = "src/main.rs"
+
+[dependencies]
+gpui = { package = "gpui-kit", version = "=0.8.0", features = ["gpui-fast"] }
+gpui-component = { version = "=0.8.0", features = ["gpui-fast"] }
+gpui-base = { version = "=0.8.0", features = ["gpui-fast"] }
+# Explicitly enable the GPUI host-manifest feature while the app embeds its own
+# RT_MANIFEST resource, as cortex/Mundus does.
+gpui-fast-backend = { package = "gpui-fast", version = "=0.1.10", features = ["windows-manifest-provided-by-host"] }
+imago-gpui = { path = "../imago-gpui" }
+
+[build-dependencies]
+embed-resource = "=3.0.12"

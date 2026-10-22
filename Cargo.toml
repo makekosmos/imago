@@ -5,13 +5,18 @@
 # workspace.
 [workspace]
 resolver = "2"
-members = ["crates/imago-gpui", "crates/mundus-gpui-kit"]
+members = [
+    "crates/imago-gpui",
+    "crates/mundus-gpui-kit",
+    "crates/window-chrome-demo",
+]
 exclude = ["crates/gpui-fast"]
 
-# Local gpui-fast fork for Kosmos test-platform behavior. Consumers pin this
-# same Imago revision and apply the same patch override in their manifests.
+# Local patches for Kosmos test-platform behavior and host-owned Windows
+# manifests. Consumers pin this Imago rev and apply these overrides too.
 [patch.crates-io]
 gpui-fast = { path = "crates/gpui-fast" }
+gpui-pre = { path = "crates/gpui-pre" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.
