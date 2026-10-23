@@ -24,5 +24,5 @@ lockfile holds a single imago source.
 The same commands run as lefthook pre-push hooks and as the Quality workflow
 on every PR and push to main, on Linux, Windows and macOS — the platforms
 the consumers ship on. The pinned toolchain lives in `toolchain.json` and
-`rust-toolchain.toml` (rust 1.95.0, same pin as cortex); CI fails if they
+`rust-toolchain.toml` (rust 1.99.1, same pin as cortex); CI fails if they
 disagree.
