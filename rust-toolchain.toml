@@ -2,6 +2,6 @@
 # Consumers record toolchain.json in their BOM; this file is what rustup
 # installs locally so the local gate builds the same compiler.
 [toolchain]
-channel = "1.95.0"
+channel = "1.99.1"
 profile = "minimal"
 components = ["rustfmt", "clippy"]

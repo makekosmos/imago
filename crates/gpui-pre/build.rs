@@ -1,6 +1,7 @@
 #![allow(clippy::disallowed_methods, reason = "build scripts are exempt")]
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
     println!("cargo::rustc-check-cfg=cfg(gles)");
 
     // Leak detection does bookkeeping on every entity handle, so `test-support`
@@ -15,19 +16,8 @@ fn main() {
         println!("cargo::rustc-cfg=gpui_leak_detection");
     }
 
-    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-
-    if target_os == "windows" {
-        #[cfg(feature = "windows-manifest")]
-        embed_resource();
-    }
+    // gpui-kit 0.8 retains gpui-pre as a compatibility dependency. The host
+    // embeds its own app manifest; embedding another RT_MANIFEST id=1 causes
+    // CVT1100/LNK1123. Keep the feature for upstream compatibility, but do
+    // not embed gpui-pre's bundled manifest.
 }
-
-// Local patch (KOS-328): the `windows-manifest` feature is force-enabled by
-// gpui-pre-platform, so it cannot be turned off from the outside. The apps
-// embed their own windows/app.manifest (Common Controls v6 + PerMonitorV2,
-// superset of gpui.manifest.xml) via their own build.rs; embedding a second
-// RT_MANIFEST id=1 fails to link (CVTRES CVT1100 / LNK1123). Keep the
-// feature valid but make the embed a no-op.
-#[cfg(feature = "windows-manifest")]
-fn embed_resource() {}

@@ -5,17 +5,18 @@
 # workspace.
 [workspace]
 resolver = "2"
-members = ["crates/imago-gpui", "crates/mundus-gpui-kit"]
-# Patched gpui revision shared by the GPUI apps (KOS-328): vendored crates.io
-# sources with local patches, consumed via [patch.crates-io] git rev by apps.
-# Not workspace members; local patches below enable shared UI tests here.
-exclude = ["crates/gpui-pre", "crates/gpui-pre-windows"]
+members = [
+    "crates/imago-gpui",
+    "crates/mundus-gpui-kit",
+    "crates/window-chrome-demo",
+]
+exclude = ["crates/gpui-fast"]
 
-# Exercise shared controls against the same patched TestWindow used by apps.
-# Workspace patches do not propagate to consumers; their Git patches stay pinned.
+# Local patches for Kosmos test-platform behavior and host-owned Windows
+# manifests. Consumers pin this Imago rev and apply these overrides too.
 [patch.crates-io]
+gpui-fast = { path = "crates/gpui-fast" }
 gpui-pre = { path = "crates/gpui-pre" }
-gpui-pre-windows = { path = "crates/gpui-pre-windows" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.
@@ -28,12 +29,10 @@ opt-level = 3
 debug-assertions = false
 overflow-checks = false
 
-# Test windows expose `cx.debug_bounds` only when gpui records debug
-# selectors; upstream gates that on `all(debug_assertions, test-support)`,
-# and the blanket dev profile above turns dep assertions off. Re-enable them
-# just for gpui so `#[gpui::test]` UI probes keep working.
-[profile.dev.package.gpui-pre]
+# UI probes need debug selectors in test-support builds; the blanket dev
+# profile above disables dependency assertions, so re-enable them for gpui-fast.
+[profile.dev.package.gpui-fast]
 debug-assertions = true
 
-[profile.dev.package.gpui-pre-macros]
+[profile.dev.package.gpui-fast-macros]
 debug-assertions = true

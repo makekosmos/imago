@@ -1,8 +1,8 @@
 use crate::{
-    A11yCallbacks, AnyWindowHandle, Bounds, DevicePixels, DispatchEventResult, GpuSpecs,
-    HeadlessAtlas, Pixels, PlatformAtlas, PlatformDisplay, PlatformHeadlessRenderer, PlatformInput,
+    AnyWindowHandle, Bounds, DevicePixels, DispatchEventResult, DisplayId, GpuSpecs, HeadlessAtlas,
+    Pixels, PlatformAtlas, PlatformDisplay, PlatformHeadlessRenderer, PlatformInput,
     PlatformInputHandler, PlatformWindow, Point, PromptButton, RequestFrameOptions, Scene, Size,
-    TestPlatform, TextInputConfiguration, TextInputStateChange, WindowAppearance,
+    TestDisplay, TestPlatform, TextInputConfiguration, TextInputStateChange, WindowAppearance,
     WindowBackgroundAppearance, WindowBounds, WindowControlArea, WindowInsets, WindowParams,
     WindowVisibility,
 };
@@ -44,13 +44,12 @@ pub(crate) struct TestWindowState {
     virtual_keyboard_requests: usize,
     virtual_keyboard_dismissals: usize,
     moved_callback: Option<Box<dyn FnMut()>>,
+    display_changed_callback: Option<Box<dyn FnMut()>>,
     appearance_change_callback: Option<Box<dyn FnMut()>>,
     request_frame_callback: Option<Box<dyn FnMut(RequestFrameOptions)>>,
     frame_wake_count: Rc<Cell<usize>>,
     frame_scheduled: bool,
     frame_callback_pending: bool,
-    pub(crate) present_pending: bool,
-    pub(crate) draw_count: usize,
     input_handler: Option<PlatformInputHandler>,
     text_input_configurations: Vec<TextInputConfiguration>,
     text_input_state_changes: Vec<TextInputStateChange>,
@@ -119,13 +118,12 @@ impl TestWindow {
             virtual_keyboard_requests: 0,
             virtual_keyboard_dismissals: 0,
             moved_callback: None,
+            display_changed_callback: None,
             appearance_change_callback: None,
             request_frame_callback: None,
             frame_wake_count: Rc::new(Cell::new(0)),
             frame_scheduled: false,
             frame_callback_pending: false,
-            present_pending: false,
-            draw_count: 0,
             input_handler: None,
             text_input_configurations: Vec::new(),
             text_input_state_changes: Vec::new(),
@@ -169,6 +167,19 @@ impl TestWindow {
         if let Some(mut callback) = callback {
             callback(visibility);
             self.0.lock().visibility_callback = Some(callback);
+        }
+    }
+
+    /// Moves the window to the display with the given ID.
+    pub fn simulate_move_to_display(&self, display_id: DisplayId) {
+        let callback = {
+            let mut state = self.0.lock();
+            state.display = Rc::new(TestDisplay::with_id(display_id));
+            state.display_changed_callback.take()
+        };
+        if let Some(mut callback) = callback {
+            callback();
+            self.0.lock().display_changed_callback = Some(callback);
         }
     }
 
@@ -312,14 +323,6 @@ impl PlatformWindow for TestWindow {
 
     fn on_insets_changed(&self, callback: Box<dyn FnMut(WindowInsets)>) {
         self.0.lock().insets_callback = Some(callback);
-    }
-
-    /// Local patch: a test window has no platform adapter to connect a screen
-    /// reader, so `a11y_init` activates immediately. `Window::sync_active_flag`
-    /// then collects accesskit nodes every frame, making
-    /// [`crate::Window::debug_a11y_tree_json`] usable from `#[gpui::test]`.
-    fn a11y_init(&self, callbacks: A11yCallbacks) {
-        let _ = (callbacks.activation)();
     }
 
     fn show_soft_keyboard(&self) {
@@ -523,6 +526,10 @@ impl PlatformWindow for TestWindow {
         self.0.lock().moved_callback = Some(callback)
     }
 
+    fn on_display_changed(&self, callback: Box<dyn FnMut()>) {
+        self.0.lock().display_changed_callback = Some(callback)
+    }
+
     fn on_should_close(&self, callback: Box<dyn FnMut() -> bool>) {
         self.0.lock().should_close_handler = Some(callback);
     }
@@ -540,8 +547,6 @@ impl PlatformWindow for TestWindow {
     fn draw(&self, scene: &Scene) {
         let scale_factor = self.scale_factor();
         let mut state = self.0.lock();
-        assert!(!state.present_pending, "overwrote a buffer awaiting Present");
-        state.draw_count += 1;
         state.frame_callback_pending = true;
         state.frame_scheduled = true;
         let device_size: Size<DevicePixels> = state.bounds.size.to_device_pixels(scale_factor);
@@ -552,10 +557,6 @@ impl PlatformWindow for TestWindow {
 
     fn sprite_atlas(&self) -> sync::Arc<dyn crate::PlatformAtlas> {
         self.0.lock().sprite_atlas.clone()
-    }
-
-    fn can_draw(&self) -> bool {
-        !self.0.lock().present_pending
     }
 
     #[cfg(any(test, feature = "test-support"))]

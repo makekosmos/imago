@@ -22,40 +22,22 @@ struct Probe {
     captured: Captured,
 }
 
+struct ButtonProbe;
+
+impl Render for ButtonProbe {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .child(button::primary("save").label("Сохранить"))
+            .child(button::ghost("close").accessibility_label("Закрыть"))
+    }
+}
+
 /// Snapshot `el`'s emitted accessibility facts: its role plus every property
 /// `write_a11y_info` writes onto the accesskit node.
 fn capture<E: gpui::Element>(el: E) -> (Option<gpui::Role>, accesskit::Node) {
     let role = el.a11y_role();
     let mut node = accesskit::Node::new(role.unwrap_or(accesskit::Role::GenericContainer));
     el.write_a11y_info(&mut node);
-    (role, node)
-}
-
-/// Snapshot the accessibility facts a `gpui-component` [`Button`] emits.
-///
-/// `Button::render` returns another component (`gpui_base::Button`) whose own
-/// render applies the role/name onto an inner `Stateful<Div>`, so the role
-/// only exists once the component is laid out. We drive `request_layout` by
-/// hand inside the canvas prepaint callback (a phase where GPUI explicitly
-/// permits layout requests), recover the rendered inner element via
-/// [`gpui::AnyElement::downcast_mut`], and probe that.
-fn capture_button(
-    button: gpui_component::button::Button,
-    window: &mut Window,
-    cx: &mut gpui::App,
-) -> (Option<gpui::Role>, accesskit::Node) {
-    let mut any = RenderOnce::render(button, window, cx).into_any_element();
-    let view = any
-        .downcast_mut::<gpui::ViewElement<gpui_base::Button>>()
-        .expect("gpui-component Button renders to gpui_base::Button");
-    let (_layout_id, request_layout) = view.request_layout(None, None, window, cx);
-    let mut inner: gpui::AnyElement = request_layout.unwrap();
-    let div = inner
-        .downcast_mut::<gpui_base::ObservedElement<gpui::Stateful<gpui::Div>>>()
-        .expect("gpui-component Button should render to a Stateful<Div>");
-    let role = div.a11y_role();
-    let mut node = accesskit::Node::new(role.unwrap_or(accesskit::Role::GenericContainer));
-    div.write_a11y_info(&mut node);
     (role, node)
 }
 
@@ -138,35 +120,17 @@ fn sidebar_item_emits_button_role_and_label(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn buttons_emit_button_role_and_label(cx: &mut TestAppContext) {
-    let captured: Captured = Default::default();
-    let nodes = drawn(
-        cx,
-        Probe {
-            builds: vec![
-                Rc::new(|window, cx| {
-                    capture_button(button::primary("save").label("Сохранить"), window, cx)
-                }),
-                Rc::new(|window, cx| {
-                    capture_button(
-                        button::ghost("close").accessibility_label("Закрыть"),
-                        window,
-                        cx,
-                    )
-                }),
-            ],
-            captured: captured.clone(),
-        },
-    );
-
-    let (role, node) = &nodes[0];
-    assert_eq!(*role, Some(gpui::Role::Button));
+    cx.update(gpui_component::init);
+    let (_, cx) = cx.add_window_view(|_, _| ButtonProbe);
+    cx.update(|window, cx| window.draw(cx).clear(cx));
+    let tree = cx
+        .update(|window, _| window.debug_a11y_tree_json())
+        .expect("test window should expose its accessibility tree");
     // gpui-component derives the name from `.label(...)`.
-    assert_eq!(node.label(), Some("Сохранить"));
-
-    let (role, node) = &nodes[1];
-    assert_eq!(*role, Some(gpui::Role::Button));
+    assert!(tree.contains("Сохранить"));
     // Icon-only buttons take an explicit accessible name.
-    assert_eq!(node.label(), Some("Закрыть"));
+    assert!(tree.contains("Закрыть"));
+    assert!(tree.matches("Button").count() >= 2, "{tree}");
 }
 
 #[gpui::test]

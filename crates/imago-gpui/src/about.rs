@@ -4,6 +4,7 @@ mod diagnostics;
 pub use diagnostics::{DiagnosticCheck, DiagnosticState, Diagnostics};
 
 use crate::{settings::UiStyle, theme::c};
+use ::gpui::IntoElement;
 use ::gpui::{prelude::*, *};
 
 #[derive(IntoElement)]

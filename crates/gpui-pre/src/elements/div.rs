@@ -3141,19 +3141,12 @@ impl Interactivity {
                     .clone();
                 let hover_listener = Rc::new(hover_listener);
                 let hover_listener_state = was_hovered.clone();
-                let current_view = window.current_view();
                 let update_hover = move |is_hovered: bool, window: &mut Window, cx: &mut App| {
                     let mut was_hovered = hover_listener_state.borrow_mut();
                     if is_hovered != *was_hovered {
                         *was_hovered = is_hovered;
                         drop(was_hovered);
                         hover_listener(&is_hovered, window, cx);
-                        // Unlike the internal hover_style listener above,
-                        // on_hover callbacks are user code: they mutate state
-                        // but nothing schedules a repaint, so elements without
-                        // a hover_style (active items, plain rows) would keep
-                        // painting a stale hover.
-                        cx.notify(current_view);
                     }
                 };
                 let hover_listener_mode = self.hover_listener_mode;

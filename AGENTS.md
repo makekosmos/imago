@@ -27,7 +27,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-Use the pinned toolchain (`toolchain.json`, rust 1.95.0). The lefthook
+Use the pinned toolchain (`toolchain.json`, rust 1.99.1). The lefthook
 pre-push hook runs the same gate.
 
 ## Contracts to preserve
