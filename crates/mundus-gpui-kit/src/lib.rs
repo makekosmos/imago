@@ -10,5 +10,7 @@ pub mod engine;
 pub mod engine_error;
 pub mod engine_ws;
 pub mod fields;
+#[cfg(feature = "nsh")]
+pub mod nsh;
 pub mod theme;
 pub mod widgets;
