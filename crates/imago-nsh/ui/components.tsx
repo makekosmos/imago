@@ -55,7 +55,7 @@ export function Sidebar(props: {
   </View>;
 }
 
-export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean }) {
+export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean }) {
   effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
@@ -67,10 +67,10 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
       </View>
       <View class="flex-1" desktop={{ windowDrag: true }} />
     </View>
-    <View class="flex-1 flex-row items-center gap-1.5" desktop={{ windowDrag: true }}>
+    {props.showPageIdentity === false ? <View class="flex-1" desktop={{ windowDrag: true }} /> : <View class="flex-1 flex-row items-center gap-1.5" desktop={{ windowDrag: true }}>
       <Icon name={props.icon} size={15} color={props.colors.muted} />
       <Text class="font-medium" style={{ fontSize: typography.titlebar, color: props.colors.foreground }}>{props.title}</Text>
-    </View>
+    </View>}
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
