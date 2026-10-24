@@ -316,7 +316,7 @@ pub fn open_path(path: &std::path::Path) -> Result<(), String> {
 
 /// Open an https/http URL in the system browser (shell.openExternal parity).
 /// URL schemes are case-insensitive (RFC 3986 §3.1) — `HTTPS://…` is valid.
-pub fn open_url(url: &str) -> Result<(), String> {
+fn http_url_authority(url: &str) -> Option<&str> {
     let rest = if url
         .get(..8)
         .is_some_and(|p| p.eq_ignore_ascii_case("https://"))
@@ -330,10 +330,26 @@ pub fn open_url(url: &str) -> Result<(), String> {
     } else {
         None
     };
-    // A bare scheme ("https://") has no authority to open — reject it like
-    // the non-http schemes instead of handing the OS handler garbage.
-    if rest.is_none_or(|r| r.trim().is_empty()) {
-        return Err("Недопустимый URL".into());
-    }
+    rest.filter(|authority| !authority.trim().is_empty())
+}
+
+pub fn open_url(url: &str) -> Result<(), String> {
+    http_url_authority(url).ok_or_else(|| "Недопустимый URL".to_owned())?;
     open_path(std::path::Path::new(url))
+}
+
+#[cfg(test)]
+mod url_tests {
+    use super::http_url_authority;
+
+    #[test]
+    fn http_url_schemes_are_case_insensitive() {
+        for url in [
+            "HTTPS://example.com",
+            "HTTP://example.com",
+            "HtTpS://example.com",
+        ] {
+            assert_eq!(http_url_authority(url), Some("example.com"));
+        }
+    }
 }
