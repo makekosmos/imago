@@ -20,9 +20,7 @@ fn main() {
                         mount_app_view(
                             window,
                             cx,
-                            NshApp::Js(Bundle::source(
-                                include_str!("minimal/ui/.nsh/out/bundle.js").into(),
-                            )),
+                            NshApp::Js(Bundle::source(include_str!("minimal/ui/bundle.js").into())),
                             |_| {},
                         )
                     })
