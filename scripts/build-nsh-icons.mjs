@@ -18,6 +18,9 @@ const files = {
   trash: "delete.svg",
   week: "calendar-01.svg",
   display: "preference-vertical.svg",
+  windowMin: "window-min.svg",
+  windowMax: "window-max.svg",
+  windowClose: "window-close.svg",
 };
 const entries = await Promise.all(
   Object.entries(files).map(async ([name, file]) => {

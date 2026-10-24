@@ -1,4 +1,5 @@
-import { Image, Input, Scroll, Text, View } from "nsh";
+import { effect, Image, Input, Scroll, Text, View } from "nsh";
+import { Window as DesktopWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
 import type { IconName, ThemeColors } from "./types";
 import { spacing, typography } from "./types";
@@ -54,10 +55,17 @@ export function Sidebar(props: {
   </View>;
 }
 
-export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void }) {
-  return <View class="w-full flex-row items-center" style={{ height: spacing.titlebarHeight }} desktop={{ windowDrag: true }}>
-    <View onPress={props.onToggleSidebar} role="button" accessibilityLabel="Боковая панель" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
-      <Icon name="sidebar" color={props.colors.muted} />
+export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean }) {
+  effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
+  const controls = titleBar();
+  const customControls = controls.left === 0 && controls.right === 0;
+  return <View class="w-full flex-row items-center" style={{ height: controls.height || spacing.titlebarHeight }} desktop={{ windowDrag: true }}>
+    <View class="flex-row items-center" style={{ width: (props.sidebarVisible === false ? 40 : spacing.sidebarWidth) + controls.left, height: spacing.titlebarHeight }}>
+      <View style={{ width: controls.left }} />
+      <View onPress={props.onToggleSidebar} role="button" accessibilityLabel="Боковая панель" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
+        <Icon name="sidebar" color={props.colors.muted} />
+      </View>
+      <View class="flex-1" desktop={{ windowDrag: true }} />
     </View>
     <View class="flex-1 flex-row items-center gap-1.5" desktop={{ windowDrag: true }}>
       <Icon name={props.icon} size={15} color={props.colors.muted} />
@@ -66,12 +74,19 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
+    {customControls
+      ? <View class="flex-row" style={{ width: 138, height: spacing.titlebarHeight }}>
+          <View onPress={() => DesktopWindow.minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => DesktopWindow.toggleMaximize()} role="button" accessibilityLabel="Развернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMax" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => DesktopWindow.close()} role="button" accessibilityLabel="Закрыть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowClose" color={props.colors.foreground} size={14} /></View>
+        </View>
+      : <View style={{ width: controls.right }} />}
   </View>;
 }
 
-export function Button(props: { label: string; colors: ThemeColors; onPress: () => void; selected?: boolean; disabled?: boolean }) {
-  return <View onPress={props.disabled ? undefined : props.onPress} role="button" accessibilityState={{ selected: !!props.selected, disabled: !!props.disabled }} class="rounded-md border px-3 py-2" style={{ backgroundColor: props.selected ? props.colors.card : props.colors.background, borderColor: props.selected ? props.colors.accent : props.colors.border, opacity: props.disabled ? 0.5 : 1 }}>
-    <Text class="text-[13px]" style={{ color: props.selected ? props.colors.foreground : props.colors.muted }}>{props.label}</Text>
+export function Button(props: { label: string; colors: ThemeColors; onPress: () => void; selected?: boolean; disabled?: boolean; className?: string; style?: Record<string, unknown>; textColor?: string }) {
+  return <View onPress={props.disabled ? undefined : props.onPress} role="button" accessibilityState={{ selected: !!props.selected, disabled: !!props.disabled }} class={`rounded-md border px-3 py-2 ${props.className ?? ""}`} style={{ backgroundColor: props.selected ? props.colors.card : props.colors.background, borderColor: props.selected ? props.colors.accent : props.colors.border, opacity: props.disabled ? 0.5 : 1, ...props.style }}>
+    <Text class="text-[13px]" style={{ color: props.textColor ?? (props.selected ? props.colors.foreground : props.colors.muted) }}>{props.label}</Text>
   </View>;
 }
 

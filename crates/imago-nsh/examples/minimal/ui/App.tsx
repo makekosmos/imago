@@ -1,5 +1,5 @@
 import { mount, signal, Text, View } from "nsh";
-import { Sidebar, Titlebar } from "../../../ui";
+import { Sidebar, Titlebar } from "@makekosmos/imago-nsh";
 
 const colors = { background: "#0d0c10", foreground: "#e7e5ea", muted: "#8d8a94", border: "#27262a", accent: "#af94f9", card: "#131216" };
 const route = signal("home");

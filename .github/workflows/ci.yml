@@ -37,7 +37,9 @@ jobs:
           nsh test crates/imago-nsh/ui
       - name: Build the offscreen example
         run: |
+          npm install --package-lock=false --ignore-scripts --prefix crates/imago-nsh/examples/minimal/ui
           nsh build crates/imago-nsh/examples/minimal/ui --release -o crates/imago-nsh/examples/minimal/ui/.nsh/out
+          nsh test crates/imago-nsh/examples/minimal/ui
           cargo build --locked -p imago-nsh --example minimal
 
   lint:
