@@ -4211,6 +4211,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "imago-nsh"
+version = "0.1.0"
+dependencies = [
+ "gpui-kit",
+ "imago-gpui",
+ "mundus-gpui-kit",
+ "nsh-base",
+ "nsh-platform-gpui",
+]
+
+[[package]]
 name = "imgref"
 version = "1.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4918,7 +4929,6 @@ dependencies = [
  "gpui-component",
  "gpui-kit",
  "imago-gpui",
- "nsh-platform-gpui",
  "serde",
  "serde_json",
  "tungstenite 0.24.0",
@@ -9623,7 +9633,6 @@ name = "window-chrome-demo"
 version = "0.1.0"
 dependencies = [
  "embed-resource",
- "gpui-base",
  "gpui-component",
  "gpui-fast",
  "gpui-kit",

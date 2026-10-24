@@ -1,8 +1,11 @@
 use gpui::{Context, Window};
-use nsh_platform_gpui::{App as NshApp, AppOptions, AppView};
+use nsh_platform_gpui::AppOptions;
 
-/// Creates a GPUI host for an NSH bundle and configures native components
-/// before the bundle starts running.
+pub use imago_gpui;
+pub use mundus_gpui_kit;
+pub use nsh_base::{registry as nsh_base_registry, Theme as NshTheme};
+pub use nsh_platform_gpui::{App as NshApp, AppView, Bundle, ComponentContext, NativeComponent};
+
 pub fn mount_app_view(
     window: &mut Window,
     cx: &mut Context<AppView>,
