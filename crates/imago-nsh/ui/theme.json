@@ -1,0 +1,40 @@
+{
+  "cssVars": {
+    "theme": {
+      "font-sans": "Inter, sans-serif",
+      "radius": "0.625rem",
+      "radius-control": "0.5rem",
+      "spacing-sidebar": "240px",
+      "spacing-titlebar": "40px",
+      "spacing-row": "32px",
+      "font-size-body": "13px",
+      "font-size-label": "12px"
+    },
+    "light": {
+      "background": "#faf9fb",
+      "foreground": "#26242a",
+      "card": "#f2f0f4",
+      "card-foreground": "#26242a",
+      "muted": "#ece9ef",
+      "muted-foreground": "#77727e",
+      "primary": "#7152bf",
+      "primary-foreground": "#ffffff",
+      "border": "#dedbe2",
+      "input": "#dedbe2",
+      "ring": "#b18aff"
+    },
+    "dark": {
+      "background": "#0d0c10",
+      "foreground": "#e7e5ea",
+      "card": "#131216",
+      "card-foreground": "#e7e5ea",
+      "muted": "#27262a",
+      "muted-foreground": "#8d8a94",
+      "primary": "#af94f9",
+      "primary-foreground": "#0d0c10",
+      "border": "#27262a",
+      "input": "#27262a",
+      "ring": "#af94f9"
+    }
+  }
+}

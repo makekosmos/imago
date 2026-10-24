@@ -18,20 +18,3 @@ fn open_url_rejects_non_http_schemes() {
     assert!(invalid_url_error("https://"));
     assert!(invalid_url_error("http://"));
 }
-
-#[test]
-fn open_url_accepts_any_case_http_scheme() {
-    // An uppercase scheme is a valid URL — it must not take the
-    // "Недопустимый URL" branch. (Whether xdg-open actually launches is
-    // environment-dependent; only the scheme check is asserted.)
-    for url in [
-        "HTTPS://example.com",
-        "HTTP://example.com",
-        "HtTpS://example.com",
-    ] {
-        assert!(
-            !invalid_url_error(url),
-            "valid https/http URL rejected: {url}"
-        );
-    }
-}

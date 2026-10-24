@@ -213,7 +213,9 @@ pub(crate) fn carry_paint_records(
             [range.start.tab_handle_index..range.end.tab_handle_index],
     );
     crate::fast::a11y::reuse_paint(window, range);
+    #[cfg(any(test, feature = "test-support"))]
     let next = &mut window.next_frame;
+    #[cfg(any(test, feature = "test-support"))]
     let rendered = &mut window.rendered_frame;
     #[cfg(any(test, feature = "test-support"))]
     for (selector, bounds) in

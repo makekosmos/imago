@@ -14,6 +14,34 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
+  shared-nsh-ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          rustup toolchain install "$(node -p 'require("./toolchain.json").rust')" --profile minimal --component rustfmt --component clippy
+          rustup default "$(node -p 'require("./toolchain.json").rust')"
+      - name: Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libvulkan1
+      - name: Install NSH CLI
+        run: cargo install nsh-cli --version 0.2.0 --locked
+      - name: Build and test the shared TSX package
+        run: |
+          node scripts/build-nsh-icons.mjs
+          nsh build crates/imago-nsh/ui --release -o crates/imago-nsh/ui/.nsh/out
+          nsh test crates/imago-nsh/ui
+      - name: Build the offscreen example
+        run: |
+          npm install --package-lock=false --ignore-scripts --prefix crates/imago-nsh/examples/minimal/ui
+          nsh build crates/imago-nsh/examples/minimal/ui --release -o crates/imago-nsh/examples/minimal/ui/.nsh/out
+          nsh test crates/imago-nsh/examples/minimal/ui
+          cargo build --locked -p imago-nsh --example minimal
+
   lint:
     runs-on: ubuntu-24.04
     steps:

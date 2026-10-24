@@ -22,3 +22,6 @@ ureq = { version = "2.12", default-features = false, features = ["json"] }
 # version cortex resolves through tokio-tungstenite, so the dep tree stays
 # coherent. Blocking reads run on a consumer worker thread.
 tungstenite = "0.24"
+
+[features]
+default = []
