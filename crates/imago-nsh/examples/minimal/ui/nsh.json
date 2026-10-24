@@ -1,0 +1,7 @@
+{
+  "name": "Imago minimal",
+  "id": "com.makekosmos.imago.minimal",
+  "version": "0.1.0",
+  "build": 1,
+  "theme": "../../../ui/theme.json"
+}

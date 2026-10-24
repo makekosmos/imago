@@ -1,24 +1,30 @@
 # imago-nsh
 
-`imago-nsh` gives a GPUI app the shared NSH host, Imago theme crate, and Mundus Engine client through one dependency. NSH screens remain TSX modules in the consuming app.
+`imago-nsh` provides the GPUI host, Engine client, shared NSH theme and reusable TSX components. The npm package and Cargo crate live at the same Imago revision.
 
-Add the dependency at the Imago revision you use:
+## Connect an app
 
-```toml
-imago-nsh = { git = "https://github.com/makekosmos/imago.git", rev = "<revision>" }
-```
+1. Pin the same Imago revision in Cargo and the app's UI package:
 
-Mount the TSX bundle in the window builder and register the app's native bridge before loading it:
+   ```toml
+   imago-nsh = { git = "https://github.com/makekosmos/imago.git", rev = "<revision>" }
+   ```
 
-```rust
-let view = imago_nsh::mount_app_view(
-    window,
-    cx,
-    imago_nsh::NshApp::Js(imago_nsh::Bundle::source(include_str!("../ui/bundle.js").into())),
-    |view| view.register_component("app.bridge", bridge_factory()),
-);
-```
+   ```json
+   { "dependencies": { "@makekosmos/imago-nsh": "git+https://github.com/makekosmos/imago.git#<revision>" } }
+   ```
 
-The consuming crate can reach the existing Engine client and theme APIs as `imago_nsh::mundus_gpui_kit` and `imago_nsh::imago_gpui`. NSH's base components use `imago_nsh::nsh_base_registry()` and `imago_nsh::NshTheme`.
+2. Install the UI dependency with `npm install` in the directory containing `nsh.json`.
+3. Import the shared shell and controls in TSX:
 
-This crate currently shares the host and Rust APIs. TSX titlebars, navigation, controls, and appearance screens still belong to each application.
+   ```tsx
+   import { Sidebar, Titlebar } from "@makekosmos/imago-nsh";
+   ```
+
+4. Build the TSX entry with `nsh build ui` and mount the bundle in the GPUI window:
+
+   ```rust
+   mount_app_view(window, cx, NshApp::Js(Bundle::source(bundle)), |_| {})
+   ```
+
+`examples/minimal` shows a window shell, sidebar and one page. The shared package exports theme tokens, SVG icons, titlebar, sidebar navigation, common controls and appearance settings. An application supplies its navigation entries, theme colors and page content.

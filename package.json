@@ -1,0 +1,12 @@
+{
+  "name": "@makekosmos/imago-nsh",
+  "version": "0.1.0",
+  "private": false,
+  "files": [
+    "crates/imago-nsh/ui"
+  ],
+  "exports": {
+    ".": "./crates/imago-nsh/ui/index.tsx",
+    "./theme.json": "./crates/imago-nsh/ui/theme.json"
+  }
+}
