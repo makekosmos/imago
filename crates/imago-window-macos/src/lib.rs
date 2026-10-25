@@ -574,6 +574,13 @@ fn contents_row_view(mtm: MainThreadMarker, entry: &Contents) -> Retained<NSView
 }
 
 /// The reader window on screen, with its contents popover once shown.
+type ReaderSettings = (
+    Retained<NSPopover>,
+    Retained<NSTextField>,
+    Retained<NSButton>,
+    Retained<NSButton>,
+);
+
 struct ReaderWindow {
     window: Retained<NSWindow>,
     _view: Rc<AppView>,
@@ -583,12 +590,7 @@ struct ReaderWindow {
     /// The search popover, once it has been shown.
     search: Option<SearchPanel>,
     /// The settings popover, while it is open, with its zoom label.
-    settings: Option<(
-        Retained<NSPopover>,
-        Retained<NSTextField>,
-        Retained<NSButton>,
-        Retained<NSButton>,
-    )>,
+    settings: Option<ReaderSettings>,
 }
 
 thread_local! {

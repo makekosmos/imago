@@ -29,5 +29,9 @@ fn main() -> std::process::ExitCode {
         ],
         Root::of::<Empty>,
         Root::of::<Empty>,
+        |_| {},
     )
 }
+
+#[cfg(not(target_os = "macos"))]
+fn main() {}
