@@ -61,7 +61,9 @@ pub struct Contents {
 
 /// The contents of the book in the reader window, listed by its popover.
 static CONTENTS_LIST: Mutex<Vec<Contents>> = Mutex::new(Vec::new());
-/// Zero-based pages picked in the contents popover since the last call.
+/// The highlights of the book in the reader window, listed by its notes popover.
+static NOTES_LIST: Mutex<Vec<Contents>> = Mutex::new(Vec::new());
+/// Zero-based pages picked in the contents or notes popover since the last call.
 static READER_PRESSES: Mutex<Vec<usize>> = Mutex::new(Vec::new());
 /// The title of a reader window asked for, until the main thread opens it.
 static READER_OPEN: Mutex<Option<ReaderOpen>> = Mutex::new(None);
@@ -78,7 +80,12 @@ pub fn set_contents(contents: Vec<Contents>) {
     *lock(&CONTENTS_LIST) = contents;
 }
 
-/// The pages picked in the contents popover since the last call, oldest first.
+/// Sets the highlights the reader window's notes popover lists.
+pub fn set_notes(notes: Vec<Contents>) {
+    *lock(&NOTES_LIST) = notes;
+}
+
+/// The pages picked in the contents or notes popover since the last call, oldest first.
 pub fn reader_presses() -> Vec<usize> {
     std::mem::take(&mut *lock(&READER_PRESSES))
 }
@@ -91,8 +98,6 @@ pub enum ReaderCommand {
     Tone(usize),
     /// Switches reading mode on or off.
     TextMode,
-    /// Shows or hides the notes panel.
-    Notes,
     /// The search field's text as it changes; empty when cleared.
     Search(String),
 }
@@ -101,11 +106,11 @@ pub enum ReaderCommand {
 #[derive(Clone)]
 pub struct ReaderState {
     pub zoom_percent: u32,
+    pub zoom_enabled: bool,
     /// The labels of the tones, in the order [`ReaderCommand::Tone`] picks.
     pub tones: Vec<String>,
     pub tone: usize,
     pub text_mode: bool,
-    pub notes_open: bool,
 }
 
 /// The toolbar's requests the app has not taken yet, oldest first.
@@ -146,14 +151,16 @@ fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 
 /// Shows a window titled `title` of `size` points: `rows` in the system
 /// sidebar, and the nsh app from `root` as the content. Reader windows from
-/// [`open_reader`] load the app from `reader_root`. Runs the app loop until the
-/// process ends.
+/// [`open_reader`] load the app from `reader_root`. `components` registers the
+/// native components of every window before its app loads. Runs the app loop
+/// until the process ends.
 pub fn run(
     title: &str,
     size: (f64, f64),
     rows: Vec<Row>,
     root: fn() -> Root,
     reader_root: fn() -> Root,
+    components: fn(&AppView),
 ) -> ExitCode {
     let mtm = MainThreadMarker::new().expect("run must be called on the main thread");
     let app = NSApplication::sharedApplication(mtm);
@@ -190,6 +197,7 @@ pub fn run(
             ..Default::default()
         },
     );
+    components(&view);
     view.load(App::Rust(root()));
 
     let (source_list, _rows) = source_list(mtm, rows);
@@ -217,7 +225,13 @@ pub fn run(
     window.setTitlebarAppearsTransparent(true);
     window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
 
-    let ticker = Ticker::new(mtm, TickerIvars { reader_root });
+    let ticker = Ticker::new(
+        mtm,
+        TickerIvars {
+            reader_root,
+            components,
+        },
+    );
     // SAFETY: the timer retains `ticker` and runs on the main loop, where the
     // windows live; it lasts as long as the app loop.
     unsafe {
@@ -531,29 +545,27 @@ impl ContentsTable {
 /// One contents row: the title indented by depth, and the page it opens.
 fn contents_row_view(mtm: MainThreadMarker, entry: &Contents) -> Retained<NSView> {
     let cell = NSTableCellView::initWithFrame(NSTableCellView::alloc(mtm), NSRect::ZERO);
-    let title = NSTextField::labelWithString(
-        &NSString::from_str(&format!(
-            "{}{}",
-            "    ".repeat(entry.depth.min(4)),
-            entry.title
-        )),
-        mtm,
-    );
+    let title = NSTextField::labelWithString(&NSString::from_str(&entry.title), mtm);
+    title.setLineBreakMode(NSLineBreakMode::ByTruncatingTail);
     let page =
         NSTextField::labelWithString(&NSString::from_str(&(entry.page + 1).to_string()), mtm);
     title.setTranslatesAutoresizingMaskIntoConstraints(false);
     page.setTranslatesAutoresizingMaskIntoConstraints(false);
     cell.addSubview(&title);
     cell.addSubview(&page);
+    let indent = POPOVER_ROW_INSET + POPOVER_DEPTH_INDENT * entry.depth.min(4) as f64;
     let constraints = NSArray::from_retained_slice(&[
         title
             .leadingAnchor()
-            .constraintEqualToAnchor_constant(&cell.leadingAnchor(), 8.0),
+            .constraintEqualToAnchor_constant(&cell.leadingAnchor(), indent),
         title
             .centerYAnchor()
             .constraintEqualToAnchor(&cell.centerYAnchor()),
+        title
+            .trailingAnchor()
+            .constraintLessThanOrEqualToAnchor_constant(&page.leadingAnchor(), -POPOVER_ROW_GAP),
         page.trailingAnchor()
-            .constraintEqualToAnchor_constant(&cell.trailingAnchor(), -8.0),
+            .constraintEqualToAnchor_constant(&cell.trailingAnchor(), -POPOVER_ROW_INSET),
         page.centerYAnchor()
             .constraintEqualToAnchor(&cell.centerYAnchor()),
     ]);
@@ -571,7 +583,12 @@ struct ReaderWindow {
     /// The search popover, once it has been shown.
     search: Option<SearchPanel>,
     /// The settings popover, while it is open, with its zoom label.
-    settings: Option<(Retained<NSPopover>, Retained<NSTextField>)>,
+    settings: Option<(
+        Retained<NSPopover>,
+        Retained<NSTextField>,
+        Retained<NSButton>,
+        Retained<NSButton>,
+    )>,
 }
 
 thread_local! {
@@ -580,6 +597,16 @@ thread_local! {
 
 /// Height of a list popover's title.
 const POPOVER_TITLE_HEIGHT: f64 = 36.0;
+/// Width of a list popover, and the rows it shows before it scrolls.
+const POPOVER_WIDTH: f64 = 280.0;
+const POPOVER_MAX_ROWS: usize = 12;
+/// Height of a list row, and the padding of a list popover's table.
+const POPOVER_ROW_HEIGHT: f64 = 28.0;
+const POPOVER_PADDING: f64 = 8.0;
+/// Left and right inset of a row, the indent per depth, and the gap before the page.
+const POPOVER_ROW_INSET: f64 = 12.0;
+const POPOVER_DEPTH_INDENT: f64 = 14.0;
+const POPOVER_ROW_GAP: f64 = 8.0;
 /// Width past which a reader window's title is cut with an ellipsis.
 const TITLE_MAX_WIDTH: f64 = 300.0;
 /// Height of the reader toolbar's title and groups.
@@ -675,9 +702,11 @@ define_class!(
             let ivars = self.ivars();
             match ivars.left.selectedSegment() {
                 LEFT_CONTENTS => {
-                    show_reader_contents(MainThreadMarker::from(self), &ivars.left, LEFT_CONTENTS)
+                    show_reader_list(MainThreadMarker::from(self), &ivars.left, LEFT_CONTENTS, "Оглавление", &CONTENTS_LIST)
                 }
-                LEFT_NOTES => push_command(ReaderCommand::Notes),
+                LEFT_NOTES => {
+                    show_reader_list(MainThreadMarker::from(self), &ivars.left, LEFT_NOTES, "Заметки", &NOTES_LIST)
+                }
                 _ => {}
             }
         }
@@ -944,7 +973,12 @@ fn title_button(mtm: MainThreadMarker, title: &str, path: &str) -> Retained<NSBu
 
 /// Opens a reader window for `request`, with the nsh app from `root`, closing
 /// the reader window open before.
-fn open_reader_window(mtm: MainThreadMarker, request: &ReaderOpen, root: fn() -> Root) {
+fn open_reader_window(
+    mtm: MainThreadMarker,
+    request: &ReaderOpen,
+    root: fn() -> Root,
+    components: fn(&AppView),
+) {
     let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(1000.0, 800.0));
     let style = NSWindowStyleMask::Titled
         | NSWindowStyleMask::FullSizeContentView
@@ -973,6 +1007,7 @@ fn open_reader_window(mtm: MainThreadMarker, request: &ReaderOpen, root: fn() ->
             ..Default::default()
         },
     );
+    components(&view);
     view.load(App::Rust(root()));
     window.setContentView(Some(&view.view()));
 
@@ -1009,24 +1044,32 @@ fn open_reader_window(mtm: MainThreadMarker, request: &ReaderOpen, root: fn() ->
     }
 }
 
-/// A popover titled `title` listing `entries` as a source list; a press on
-/// one opens its page.
+/// A popover titled `title` listing `entries` as a source list, sized to
+/// them up to a limit; a press on one opens its page.
 fn list_popover(
     mtm: MainThreadMarker,
     title: &str,
     entries: Vec<Contents>,
-    size: NSSize,
     behavior: NSPopoverBehavior,
 ) -> (Retained<NSPopover>, Retained<ContentsTable>) {
+    let rows = entries.len().clamp(1, POPOVER_MAX_ROWS);
+    let size = NSSize::new(
+        POPOVER_WIDTH,
+        POPOVER_TITLE_HEIGHT + rows as f64 * POPOVER_ROW_HEIGHT + POPOVER_PADDING,
+    );
     let table = ContentsTable::new(mtm, entries);
     table.ivars().table.setStyle(NSTableViewStyle::SourceList);
+    table.ivars().table.setRowHeight(POPOVER_ROW_HEIGHT);
     let scroll = NSScrollView::new(mtm);
     scroll.setDocumentView(Some(&table.ivars().table));
     scroll.setBorderType(NSBorderType::NoBorder);
     scroll.setDrawsBackground(false);
     scroll.setFrame(NSRect::new(
-        NSPoint::new(0.0, 0.0),
-        NSSize::new(size.width, size.height - POPOVER_TITLE_HEIGHT),
+        NSPoint::new(0.0, POPOVER_PADDING / 2.0),
+        NSSize::new(
+            size.width,
+            size.height - POPOVER_TITLE_HEIGHT - POPOVER_PADDING,
+        ),
     ));
     let heading = NSTextField::labelWithString(&NSString::from_str(title), mtm);
     heading.setAlignment(NSTextAlignment::Center);
@@ -1047,15 +1090,17 @@ fn list_popover(
     (popover, table)
 }
 
-/// Shows the contents popover below the toolbar's contents button.
-fn show_reader_contents(mtm: MainThreadMarker, anchor: &NSSegmentedControl, segment: isize) {
-    let (popover, table) = list_popover(
-        mtm,
-        "Оглавление",
-        lock(&CONTENTS_LIST).clone(),
-        NSSize::new(280.0, 420.0),
-        NSPopoverBehavior::Transient,
-    );
+/// Shows a list popover titled `title` below the toolbar's `segment`, with
+/// the entries of `list`.
+fn show_reader_list(
+    mtm: MainThreadMarker,
+    anchor: &NSSegmentedControl,
+    segment: isize,
+    title: &str,
+    list: &Mutex<Vec<Contents>>,
+) {
+    let (popover, table) =
+        list_popover(mtm, title, lock(list).clone(), NSPopoverBehavior::Transient);
     popover.showRelativeToRect_ofView_preferredEdge(
         segment_rect(anchor, segment),
         anchor,
@@ -1189,18 +1234,33 @@ fn show_reader_settings(mtm: MainThreadMarker, toolbar: &ReaderToolbar, segment:
     ));
     root.addSubview(&zoom_label);
 
-    for (title, x, action) in [("−", 124.0, sel!(zoomOut:)), ("+", 224.0, sel!(zoomIn:))] {
-        let step = NSButton::new(mtm);
-        step.setTitle(&NSString::from_str(title));
-        step.setBezelStyle(NSBezelStyle::Push);
-        step.setFrame(NSRect::new(NSPoint::new(x, 52.0), NSSize::new(32.0, 28.0)));
-        // SAFETY: the target is the toolbar, which the reader window keeps alive.
-        unsafe {
-            step.setTarget(Some(target));
-            step.setAction(Some(action));
-        }
-        root.addSubview(&step);
+    let zoom_out = NSButton::new(mtm);
+    zoom_out.setTitle(&NSString::from_str("−"));
+    zoom_out.setBezelStyle(NSBezelStyle::Push);
+    zoom_out.setFrame(NSRect::new(
+        NSPoint::new(124.0, 52.0),
+        NSSize::new(32.0, 28.0),
+    ));
+    zoom_out.setEnabled(state.zoom_enabled);
+    unsafe {
+        zoom_out.setTarget(Some(target));
+        zoom_out.setAction(Some(sel!(zoomOut:)));
     }
+    root.addSubview(&zoom_out);
+
+    let zoom_in = NSButton::new(mtm);
+    zoom_in.setTitle(&NSString::from_str("+"));
+    zoom_in.setBezelStyle(NSBezelStyle::Push);
+    zoom_in.setFrame(NSRect::new(
+        NSPoint::new(224.0, 52.0),
+        NSSize::new(32.0, 28.0),
+    ));
+    zoom_in.setEnabled(state.zoom_enabled);
+    unsafe {
+        zoom_in.setTarget(Some(target));
+        zoom_in.setAction(Some(sel!(zoomIn:)));
+    }
+    root.addSubview(&zoom_in);
 
     let tones = NSSegmentedControl::new(mtm);
     tones.setSegmentCount(state.tones.len() as isize);
@@ -1234,7 +1294,7 @@ fn show_reader_settings(mtm: MainThreadMarker, toolbar: &ReaderToolbar, segment:
 
     READER_WINDOW.with(|slot| {
         if let Some(reader) = slot.borrow_mut().as_mut() {
-            reader.settings = Some((popover, zoom_label));
+            reader.settings = Some((popover, zoom_label, zoom_out, zoom_in));
         }
     });
 }
@@ -1252,21 +1312,14 @@ fn sync_reader_toolbar() {
         };
         let ivars = reader.toolbar.ivars();
         set_segment_symbol(
-            &ivars.left,
-            LEFT_NOTES,
-            if state.notes_open {
-                "tray.fill"
-            } else {
-                "tray"
-            },
-        );
-        set_segment_symbol(
             &ivars.right,
             RIGHT_MODE,
             if state.text_mode { "book.fill" } else { "book" },
         );
-        if let Some((_, zoom_label)) = &reader.settings {
+        if let Some((_, zoom_label, zoom_out, zoom_in)) = &reader.settings {
             zoom_label.setStringValue(&NSString::from_str(&format!("{}%", state.zoom_percent)));
+            zoom_out.setEnabled(state.zoom_enabled);
+            zoom_in.setEnabled(state.zoom_enabled);
         }
     });
 }
@@ -1274,6 +1327,8 @@ fn sync_reader_toolbar() {
 pub struct TickerIvars {
     /// The app each reader window loads.
     reader_root: fn() -> Root,
+    /// Registers the native components of each reader window.
+    components: fn(&AppView),
 }
 
 define_class!(
@@ -1295,7 +1350,12 @@ define_class!(
             let Some(request) = lock(&READER_OPEN).take() else {
                 return;
             };
-            open_reader_window(mtm, &request, self.ivars().reader_root);
+            open_reader_window(
+                mtm,
+                &request,
+                self.ivars().reader_root,
+                self.ivars().components,
+            );
         }
     }
 );
