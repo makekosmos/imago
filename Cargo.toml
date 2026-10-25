@@ -11,6 +11,7 @@ members = [
     "crates/imago-nsh",
     "crates/imago-native-sidebar",
     "crates/imago-window-macos",
+    "crates/imago-gpui-native-split",
     "crates/window-chrome-demo",
 ]
 exclude = ["crates/gpui-fast"]
@@ -20,6 +21,7 @@ exclude = ["crates/gpui-fast"]
 [patch.crates-io]
 gpui-fast = { path = "crates/gpui-fast" }
 gpui-pre = { path = "crates/gpui-pre" }
+gpui-pre-macos = { path = "crates/gpui-pre-macos" }
 
 # Dev builds: keep debug info but optimize — unoptimized taffy/cosmic-text/
 # gpui (and our own render path) make even modest UIs run at ~20fps.

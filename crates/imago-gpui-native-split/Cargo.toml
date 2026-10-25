@@ -1,0 +1,14 @@
+[package]
+name = "imago-gpui-native-split"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "AppKit Tahoe sidebar hosting a GPUI view in a GPUI-owned macOS window"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6"
+imago-native-sidebar = { path = "../imago-native-sidebar" }
+objc2 = "=0.6.5"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSAppearance", "NSApplication", "NSImage", "NSImageView", "NSLayoutAnchor", "NSLayoutConstraint", "NSScrollView", "NSSplitViewController", "NSSplitViewItem", "NSTableCellView", "NSTableColumn", "NSTableView", "NSTextField", "NSToolbar", "NSToolbarItem", "NSView", "NSViewController", "NSVisualEffectView", "NSWindow"] }
+objc2-foundation = { version = "0.3.2", features = ["NSOperation"] }
+raw-window-handle = "=0.6.2"

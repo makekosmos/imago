@@ -3395,8 +3395,6 @@ dependencies = [
 [[package]]
 name = "gpui-pre-macos"
 version = "0.3.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7c988b7e49775cc8542dbe48d5a10e073d8e898a023ef3ff3d24f33363e9863"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -4209,6 +4207,18 @@ dependencies = [
  "objc2-app-kit 0.3.2",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "imago-gpui-native-split"
+version = "0.1.0"
+dependencies = [
+ "block2 0.6.2",
+ "imago-native-sidebar",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "raw-window-handle",
 ]
 
 [[package]]
