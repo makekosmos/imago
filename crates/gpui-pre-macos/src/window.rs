@@ -1879,7 +1879,7 @@ impl PlatformWindow for MacWindow {
         let mut this = self.0.as_ref().lock();
         this.background_appearance = background_appearance;
 
-        let content_view = this.native_window.contentView();
+        let content_view = unsafe { this.native_window.contentView() };
         let native_view = this.native_view.as_ptr() as id;
         let superview: id = unsafe { msg_send![native_view, superview] };
         let embedded_in_native_layout = superview != content_view;
