@@ -13,14 +13,15 @@ use objc2::{
 };
 use objc2_app_kit::{
     NSApplication, NSApplicationActivationPolicy, NSBackingStoreType, NSBezelStyle, NSBorderType,
-    NSButton, NSCellImagePosition, NSControlTextEditingDelegate, NSImage, NSImageView,
-    NSLayoutConstraint, NSLineBreakMode, NSMenu, NSMenuItem, NSPopover, NSPopoverBehavior,
-    NSResponder, NSScrollView, NSSearchField, NSSegmentSwitchTracking, NSSegmentedControl,
-    NSSplitViewController, NSSplitViewItem, NSTableCellView, NSTableColumn, NSTableView,
-    NSTableViewDataSource, NSTableViewDelegate, NSTableViewStyle, NSTextAlignment, NSTextField,
-    NSToolbar, NSToolbarDelegate, NSToolbarDisplayMode, NSToolbarFlexibleSpaceItemIdentifier,
-    NSToolbarItem, NSToolbarItemIdentifier, NSToolbarSidebarTrackingSeparatorItemIdentifier,
-    NSToolbarToggleSidebarItemIdentifier, NSView, NSViewController, NSWindow, NSWindowStyleMask,
+    NSButton, NSCellImagePosition, NSControlTextEditingDelegate, NSFont, NSImage, NSImageView,
+    NSLayoutAttribute, NSLayoutConstraint, NSLineBreakMode, NSMenu, NSMenuItem, NSPopover,
+    NSPopoverBehavior, NSResponder, NSScrollView, NSSearchField, NSSegmentSwitchTracking,
+    NSSegmentedControl, NSSplitViewController, NSSplitViewItem, NSStackView, NSTableCellView,
+    NSTableColumn, NSTableView, NSTableViewDataSource, NSTableViewDelegate, NSTableViewStyle,
+    NSTextAlignment, NSTextField, NSToolbar, NSToolbarDelegate, NSToolbarDisplayMode,
+    NSToolbarFlexibleSpaceItemIdentifier, NSToolbarItem, NSToolbarItemIdentifier,
+    NSToolbarSidebarTrackingSeparatorItemIdentifier, NSToolbarToggleSidebarItemIdentifier,
+    NSUserInterfaceLayoutOrientation, NSView, NSViewController, NSWindow, NSWindowStyleMask,
     NSWindowTitleVisibility, NSWindowToolbarStyle, NSWorkspace,
 };
 use objc2_foundation::{
@@ -181,7 +182,16 @@ pub fn run(
     reader_root: fn() -> Root,
     components: fn(&AppView),
 ) -> ExitCode {
-    run_with_titlebar_actions(title, size, rows, Vec::new(), root, reader_root, components)
+    run_with_sidebar_sections(
+        title,
+        size,
+        rows,
+        Vec::new(),
+        Vec::new(),
+        root,
+        reader_root,
+        components,
+    )
 }
 
 /// Runs a native window like [`run`] and adds the supplied actions after the
@@ -190,6 +200,30 @@ pub fn run_with_titlebar_actions(
     title: &str,
     size: (f64, f64),
     rows: Vec<Row>,
+    actions: Vec<TitlebarAction>,
+    root: fn() -> Root,
+    reader_root: fn() -> Root,
+    components: fn(&AppView),
+) -> ExitCode {
+    run_with_sidebar_sections(
+        title,
+        size,
+        rows,
+        Vec::new(),
+        actions,
+        root,
+        reader_root,
+        components,
+    )
+}
+
+/// Runs a native window with scrolling source-list rows and buttons pinned to
+/// the sidebar's lower edge, followed by optional titlebar actions.
+pub fn run_with_sidebar_sections(
+    title: &str,
+    size: (f64, f64),
+    rows: Vec<Row>,
+    footer: Vec<Row>,
     actions: Vec<TitlebarAction>,
     root: fn() -> Root,
     reader_root: fn() -> Root,
@@ -233,7 +267,7 @@ pub fn run_with_titlebar_actions(
     components(&view);
     view.load(App::Rust(root()));
 
-    let (source_list, _rows) = source_list(mtm, rows);
+    let (source_list, _rows) = source_list(mtm, rows, footer);
     let sidebar_controller = NSViewController::new(mtm);
     sidebar_controller.setView(&source_list);
     let content_controller = NSViewController::new(mtm);
@@ -286,13 +320,17 @@ pub fn run_with_titlebar_actions(
 
 /// The system source list: one cell per row, in the sidebar material, the
 /// first row selected.
-fn source_list(mtm: MainThreadMarker, rows: Vec<Row>) -> (Retained<NSView>, Retained<Rows>) {
+fn source_list(
+    mtm: MainThreadMarker,
+    rows: Vec<Row>,
+    footer: Vec<Row>,
+) -> (Retained<NSView>, Retained<Rows>) {
     let table = NSTableView::new(mtm);
     table.setStyle(NSTableViewStyle::SourceList);
     table.setHeaderView(None);
     table.setRowHeight(32.0);
     table.addTableColumn(&NSTableColumn::new(mtm));
-    let source = Rows::new(mtm, rows);
+    let source = Rows::new(mtm, rows, footer);
     // SAFETY: `source` is returned to the caller, which keeps it alive for as
     // long as the table; the table holds its data source and delegate weakly.
     unsafe {
@@ -303,11 +341,82 @@ fn source_list(mtm: MainThreadMarker, rows: Vec<Row>) -> (Retained<NSView>, Reta
     let scroll = NSScrollView::new(mtm);
     scroll.setDocumentView(Some(&table));
     scroll.setDrawsBackground(false);
-    (Retained::into_super(scroll), source)
+    scroll.setTranslatesAutoresizingMaskIntoConstraints(false);
+
+    let footer_stack = NSStackView::new(mtm);
+    footer_stack.setOrientation(NSUserInterfaceLayoutOrientation::Vertical);
+    footer_stack.setAlignment(NSLayoutAttribute::Leading);
+    footer_stack.setSpacing(4.0);
+    footer_stack.setTranslatesAutoresizingMaskIntoConstraints(false);
+    for (index, row) in source.ivars().footer.iter().enumerate() {
+        let target: &AnyObject = &*source;
+        let button = unsafe {
+            NSButton::buttonWithTitle_target_action(
+                &NSString::from_str(&row.label),
+                Some(target),
+                Some(sel!(footerPressed:)),
+                mtm,
+            )
+        };
+        button.setBordered(false);
+        button.setAlignment(NSTextAlignment::Left);
+        button.setImagePosition(NSCellImagePosition::ImageLeading);
+        button.setFont(Some(&NSFont::systemFontOfSize(13.0)));
+        if let Some(symbol) = row.symbol {
+            button.setImage(
+                NSImage::imageWithSystemSymbolName_accessibilityDescription(
+                    &NSString::from_str(symbol),
+                    Some(&NSString::from_str(&row.label)),
+                )
+                .as_deref(),
+            );
+        }
+        button.setFrame(NSRect::new(
+            NSPoint::new(0.0, 0.0),
+            NSSize::new(220.0, 32.0),
+        ));
+        button.setTranslatesAutoresizingMaskIntoConstraints(false);
+        NSLayoutConstraint::activateConstraints(&NSArray::from_retained_slice(&[
+            button.heightAnchor().constraintEqualToConstant(32.0),
+            button.widthAnchor().constraintEqualToConstant(220.0),
+        ]));
+        button.setTag(index as isize);
+        footer_stack.addArrangedSubview(&button);
+    }
+
+    let sidebar = NSView::new(mtm);
+    sidebar.addSubview(&scroll);
+    sidebar.addSubview(&footer_stack);
+    let constraints = NSArray::from_retained_slice(&[
+        scroll
+            .leadingAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.leadingAnchor(), 8.0),
+        scroll
+            .trailingAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.trailingAnchor(), -8.0),
+        scroll
+            .topAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.topAnchor(), 16.0),
+        scroll
+            .bottomAnchor()
+            .constraintEqualToAnchor_constant(&footer_stack.topAnchor(), -8.0),
+        footer_stack
+            .leadingAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.leadingAnchor(), 12.0),
+        footer_stack
+            .trailingAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.trailingAnchor(), -8.0),
+        footer_stack
+            .bottomAnchor()
+            .constraintEqualToAnchor_constant(&sidebar.bottomAnchor(), -16.0),
+    ]);
+    NSLayoutConstraint::activateConstraints(&constraints);
+    (sidebar, source)
 }
 
 pub struct RowsIvars {
     rows: Vec<Row>,
+    footer: Vec<Row>,
 }
 
 define_class!(
@@ -361,6 +470,21 @@ define_class!(
             }
         }
     }
+
+    impl Rows {
+        #[unsafe(method(footerPressed:))]
+        fn footer_pressed(&self, sender: Option<&NSButton>) {
+            let Some(index) = sender.and_then(|button| usize::try_from(button.tag()).ok()) else {
+                return;
+            };
+            if let Some(row) = self.ivars().footer.get(index) {
+                PRESSES
+                    .lock()
+                    .unwrap_or_else(|poison| poison.into_inner())
+                    .push(row.id.to_owned());
+            }
+        }
+    }
 );
 
 /// One row: its symbol and title, in a cell view the source list styles.
@@ -400,8 +524,8 @@ fn row_view(mtm: MainThreadMarker, row: &Row) -> Retained<NSView> {
 }
 
 impl Rows {
-    fn new(mtm: MainThreadMarker, rows: Vec<Row>) -> Retained<Self> {
-        let this = Self::alloc(mtm).set_ivars(RowsIvars { rows });
+    fn new(mtm: MainThreadMarker, rows: Vec<Row>, footer: Vec<Row>) -> Retained<Self> {
+        let this = Self::alloc(mtm).set_ivars(RowsIvars { rows, footer });
         // SAFETY: `init` on a freshly allocated instance of this class.
         unsafe { msg_send![super(this), init] }
     }
