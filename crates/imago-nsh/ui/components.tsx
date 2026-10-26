@@ -1,7 +1,7 @@
 import { effect, Image, Input, Scroll, Text, View } from "nsh";
 import { Window as DesktopWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
-import type { IconName, ThemeColors } from "./types";
+import type { IconName, ThemeColors, TitlebarAction } from "./types";
 import { spacing, typography } from "./types";
 
 export function Icon(props: { name: IconName; size?: number; color?: string }) {
@@ -55,7 +55,7 @@ export function Sidebar(props: {
   </View>;
 }
 
-export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean }) {
+export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean; actions?: TitlebarAction[]; onAction?: (id: string) => void }) {
   effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
@@ -74,6 +74,9 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
+    {props.actions?.map((action) => <View key={action.id} onPress={() => props.onAction?.(action.id)} role="button" accessibilityLabel={action.label} class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
+      <Icon name={action.icon} color={props.colors.muted} />
+    </View>)}
     {customControls
       ? <View class="flex-row" style={{ width: 138, height: spacing.titlebarHeight }}>
           <View onPress={() => DesktopWindow.minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>

@@ -50,6 +50,25 @@ pub fn sidebar_collapsed() -> bool {
     COLLAPSED.load(Ordering::Relaxed)
 }
 
+/// A button placed in the trailing end of the system titlebar toolbar.
+#[derive(Clone)]
+pub struct TitlebarAction {
+    pub id: String,
+    pub symbol: String,
+    pub label: String,
+}
+
+static TITLEBAR_ACTION_PRESSES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+/// Action ids the user picked since the last call, oldest first.
+pub fn titlebar_action_presses() -> Vec<String> {
+    std::mem::take(
+        &mut *TITLEBAR_ACTION_PRESSES
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner()),
+    )
+}
+
 /// One entry of a book's contents.
 #[derive(Clone)]
 pub struct Contents {
@@ -162,6 +181,20 @@ pub fn run(
     reader_root: fn() -> Root,
     components: fn(&AppView),
 ) -> ExitCode {
+    run_with_titlebar_actions(title, size, rows, Vec::new(), root, reader_root, components)
+}
+
+/// Runs a native window like [`run`] and adds the supplied actions after the
+/// system sidebar controls. Presses are returned by [`titlebar_action_presses`].
+pub fn run_with_titlebar_actions(
+    title: &str,
+    size: (f64, f64),
+    rows: Vec<Row>,
+    actions: Vec<TitlebarAction>,
+    root: fn() -> Root,
+    reader_root: fn() -> Root,
+    components: fn(&AppView),
+) -> ExitCode {
     let mtm = MainThreadMarker::new().expect("run must be called on the main thread");
     let app = NSApplication::sharedApplication(mtm);
     app.setActivationPolicy(NSApplicationActivationPolicy::Regular);
@@ -215,7 +248,7 @@ pub fn run(
     ));
     window.setContentViewController(Some(&split));
 
-    let toolbar_delegate = Toolbar::new(mtm);
+    let toolbar_delegate = Toolbar::new(mtm, actions);
     let toolbar =
         NSToolbar::initWithIdentifier(NSToolbar::alloc(mtm), &NSString::from_str("imago.window"));
     toolbar.setDelegate(Some(ProtocolObject::from_ref(&*toolbar_delegate)));
@@ -405,21 +438,36 @@ impl Split {
 
 /// AppKit's own sidebar toggle, the sidebar's tracking separator and the space
 /// after them: AppKit builds these items itself.
-fn standard_items() -> Retained<NSArray<NSToolbarItemIdentifier>> {
-    // SAFETY: AppKit's own identifiers, which it builds the items for.
-    unsafe {
-        NSArray::from_slice(&[
-            NSToolbarFlexibleSpaceItemIdentifier,
-            NSToolbarToggleSidebarItemIdentifier,
-            NSToolbarSidebarTrackingSeparatorItemIdentifier,
-            NSToolbarFlexibleSpaceItemIdentifier,
-        ])
-    }
+fn action_identifier(id: &str) -> Retained<NSToolbarItemIdentifier> {
+    NSString::from_str(&format!("imago.action.{id}"))
+}
+
+fn standard_items(actions: &[TitlebarAction]) -> Retained<NSArray<NSToolbarItemIdentifier>> {
+    // SAFETY: AppKit exports these stable NSString identifiers.
+    let mut identifiers = unsafe {
+        vec![
+            NSString::from_str(&NSToolbarFlexibleSpaceItemIdentifier.to_string()),
+            NSString::from_str(&NSToolbarToggleSidebarItemIdentifier.to_string()),
+            NSString::from_str(&NSToolbarSidebarTrackingSeparatorItemIdentifier.to_string()),
+            NSString::from_str(&NSToolbarFlexibleSpaceItemIdentifier.to_string()),
+        ]
+    };
+    identifiers.extend(actions.iter().map(|action| action_identifier(&action.id)));
+    let identifiers = identifiers
+        .iter()
+        .map(|identifier| &**identifier)
+        .collect::<Vec<_>>();
+    NSArray::from_slice(&identifiers)
+}
+
+struct ToolbarIvars {
+    actions: Vec<TitlebarAction>,
 }
 
 define_class!(
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
+    #[ivars = ToolbarIvars]
     struct Toolbar;
 
     unsafe impl NSObjectProtocol for Toolbar {}
@@ -430,19 +478,55 @@ define_class!(
             &self,
             _toolbar: &NSToolbar,
         ) -> Retained<NSArray<NSToolbarItemIdentifier>> {
-            standard_items()
+            standard_items(&self.ivars().actions)
         }
 
         #[unsafe(method_id(toolbar:itemForItemIdentifier:willBeInsertedIntoToolbar:))]
         fn item(
             &self,
             _toolbar: &NSToolbar,
-            _identifier: &NSToolbarItemIdentifier,
+            identifier: &NSToolbarItemIdentifier,
             _inserted: bool,
         ) -> Option<Retained<NSToolbarItem>> {
-            // AppKit builds the standard items itself for a delegate that
-            // answers nil.
-            None
+            let id = identifier.to_string();
+            self
+                .ivars()
+                .actions
+                .iter()
+                .enumerate()
+                .find(|(_, action)| action_identifier(&action.id).to_string() == id)
+                .and_then(|(index, action)| {
+                    let mtm = MainThreadMarker::from(self);
+                    let image = NSImage::imageWithSystemSymbolName_accessibilityDescription(
+                        &NSString::from_str(&action.symbol),
+                        Some(&NSString::from_str(&action.label)),
+                    )?;
+                    let target: &AnyObject = self;
+                    let button = unsafe {
+                        NSButton::buttonWithImage_target_action(
+                            &image,
+                            Some(target),
+                            Some(sel!(actionPressed:)),
+                            mtm,
+                        )
+                    };
+                    button.setBordered(false);
+                    button.setToolTip(Some(&NSString::from_str(&action.label)));
+                    button.setFrame(NSRect::new(
+                        NSPoint::new(0.0, 0.0),
+                        NSSize::new(34.0, 32.0),
+                    ));
+                    button.setTag(index as isize);
+
+                    let item = NSToolbarItem::initWithItemIdentifier(
+                        NSToolbarItem::alloc(mtm),
+                        identifier,
+                    );
+                    item.setLabel(&NSString::from_str(&action.label));
+                    item.setPaletteLabel(&NSString::from_str(&action.label));
+                    item.setView(Some(&button));
+                    Some(item)
+                })
         }
 
         #[unsafe(method_id(toolbarAllowedItemIdentifiers:))]
@@ -450,14 +534,30 @@ define_class!(
             &self,
             _toolbar: &NSToolbar,
         ) -> Retained<NSArray<NSToolbarItemIdentifier>> {
-            standard_items()
+            standard_items(&self.ivars().actions)
+        }
+    }
+
+    impl Toolbar {
+        #[unsafe(method(actionPressed:))]
+        fn action_pressed(&self, sender: Option<&NSButton>) {
+            let Some(index) = sender.and_then(|button| usize::try_from(button.tag()).ok()) else {
+                return;
+            };
+            let Some(action) = self.ivars().actions.get(index) else {
+                return;
+            };
+            TITLEBAR_ACTION_PRESSES
+                .lock()
+                .unwrap_or_else(|poison| poison.into_inner())
+                .push(action.id.clone());
         }
     }
 );
 
 impl Toolbar {
-    fn new(mtm: MainThreadMarker) -> Retained<Self> {
-        let this = Self::alloc(mtm).set_ivars(());
+    fn new(mtm: MainThreadMarker, actions: Vec<TitlebarAction>) -> Retained<Self> {
+        let this = Self::alloc(mtm).set_ivars(ToolbarIvars { actions });
         // SAFETY: `init` on a freshly allocated instance of this class.
         unsafe { msg_send![super(this), init] }
     }
@@ -574,6 +674,13 @@ fn contents_row_view(mtm: MainThreadMarker, entry: &Contents) -> Retained<NSView
 }
 
 /// The reader window on screen, with its contents popover once shown.
+struct ReaderSettingsPopover {
+    _popover: Retained<NSPopover>,
+    zoom_label: Retained<NSTextField>,
+    zoom_out: Retained<NSButton>,
+    zoom_in: Retained<NSButton>,
+}
+
 struct ReaderWindow {
     window: Retained<NSWindow>,
     _view: Rc<AppView>,
@@ -582,13 +689,8 @@ struct ReaderWindow {
     contents: Option<(Retained<NSPopover>, Retained<ContentsTable>)>,
     /// The search popover, once it has been shown.
     search: Option<SearchPanel>,
-    /// The settings popover, while it is open, with its zoom label.
-    settings: Option<(
-        Retained<NSPopover>,
-        Retained<NSTextField>,
-        Retained<NSButton>,
-        Retained<NSButton>,
-    )>,
+    /// The settings popover, while it is open, with its zoom controls.
+    settings: Option<ReaderSettingsPopover>,
 }
 
 thread_local! {
@@ -1294,7 +1396,12 @@ fn show_reader_settings(mtm: MainThreadMarker, toolbar: &ReaderToolbar, segment:
 
     READER_WINDOW.with(|slot| {
         if let Some(reader) = slot.borrow_mut().as_mut() {
-            reader.settings = Some((popover, zoom_label, zoom_out, zoom_in));
+            reader.settings = Some(ReaderSettingsPopover {
+                _popover: popover,
+                zoom_label,
+                zoom_out,
+                zoom_in,
+            });
         }
     });
 }
@@ -1316,10 +1423,12 @@ fn sync_reader_toolbar() {
             RIGHT_MODE,
             if state.text_mode { "book.fill" } else { "book" },
         );
-        if let Some((_, zoom_label, zoom_out, zoom_in)) = &reader.settings {
-            zoom_label.setStringValue(&NSString::from_str(&format!("{}%", state.zoom_percent)));
-            zoom_out.setEnabled(state.zoom_enabled);
-            zoom_in.setEnabled(state.zoom_enabled);
+        if let Some(settings) = &reader.settings {
+            settings
+                .zoom_label
+                .setStringValue(&NSString::from_str(&format!("{}%", state.zoom_percent)));
+            settings.zoom_out.setEnabled(state.zoom_enabled);
+            settings.zoom_in.setEnabled(state.zoom_enabled);
         }
     });
 }

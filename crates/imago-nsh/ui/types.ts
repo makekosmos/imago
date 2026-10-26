@@ -24,6 +24,7 @@ export type Appearance = {
 
 export type ThemeChoice = { key: string; name: string };
 export type Shortcut = { name: string; label: string; binding: string };
+export type TitlebarAction = { id: string; label: string; icon: IconName };
 export type IconName =
   | "about" | "check" | "inbox" | "logbook" | "more" | "nextWeek"
   | "plus" | "project" | "settings" | "someday" | "statistics" | "trash" | "week"

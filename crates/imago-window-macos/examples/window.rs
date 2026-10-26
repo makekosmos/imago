@@ -4,12 +4,14 @@
 
 use imago_native_sidebar::Row;
 use nsh_core::ui::prelude::*;
-use nsh_platform_macos::Root;
+use nsh_platform_macos::{AppView, Root};
 
 #[component]
 fn Empty() -> impl IntoElement {
     view().w_full().h_full().child(text("nsh content"))
 }
+
+fn register_components(_view: &AppView) {}
 
 fn main() -> std::process::ExitCode {
     imago_window_macos::run(
@@ -29,5 +31,6 @@ fn main() -> std::process::ExitCode {
         ],
         Root::of::<Empty>,
         Root::of::<Empty>,
+        register_components,
     )
 }
