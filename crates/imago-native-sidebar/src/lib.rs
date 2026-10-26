@@ -7,8 +7,7 @@
 //! The app registers [`components`] in its `AppOptions`, builds rows with
 //! [`SidebarSpec`] and places [`native_sidebar`] in its layout.
 
-use nsh_core::ui::prelude::*;
-use nsh_core::ui::{native, NativeEvent, NativeView};
+use nsh_core::prelude::*;
 use nsh_core::JsonValue;
 use serde_json::json;
 use std::rc::Rc;

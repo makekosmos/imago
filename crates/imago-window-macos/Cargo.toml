@@ -7,8 +7,8 @@ description = "A macOS window whose sidebar and toolbar are AppKit's own, with a
 
 [target.'cfg(target_os = "macos")'.dependencies]
 imago-native-sidebar = { path = "../imago-native-sidebar" }
-nsh-core = "=0.2.0"
-nsh-platform-macos = { version = "=0.2.0", default-features = false }
+nsh-core = "=0.3.0"
+nsh-platform-macos = { version = "=0.3.0", default-features = false }
 objc2 = "=0.6.5"
 objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSApplication", "NSButton", "NSButtonCell", "NSCell", "NSControl", "NSGraphics", "NSImage", "NSImageView", "NSLayoutAnchor", "NSLayoutConstraint", "NSMenu", "NSMenuItem", "NSPopover", "NSResponder", "NSScrollView", "NSSearchField", "NSSegmentedControl", "NSSplitViewController", "NSSplitViewItem", "NSTableCellView", "NSTableColumn", "NSTableHeaderView", "NSTableView", "NSText", "NSTextField", "NSToolbar", "NSToolbarItem", "NSView", "NSViewController", "NSWindow", "NSWorkspace"] }
 objc2-foundation = "0.3.2"

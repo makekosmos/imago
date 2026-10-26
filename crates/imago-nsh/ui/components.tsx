@@ -1,4 +1,5 @@
-import { effect, Image, Input, Scroll, Text, View } from "nsh";
+import { effect, Image, Scroll, Text, View } from "nsh";
+import { Input } from "nsh/base";
 import { Window as DesktopWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
 import type { IconName, ThemeColors, TitlebarAction } from "./types";
@@ -40,7 +41,7 @@ export function Sidebar(props: {
         <Text class="flex-1 text-[13px]" style={{ color: props.colors.muted }}>Проекты</Text>
         <Icon name="plus" color={props.colors.muted} />
       </View>
-      {props.projects.map((project) => <View key={project.id} onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
+      {props.projects.map((project) => <View onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
         <View class="h-2 w-2 rounded-full" style={{ backgroundColor: props.colors.muted }} />
         <Text class="text-[13px]" style={{ color: props.colors.muted }}>{project.title}</Text>
       </View>)}
@@ -74,7 +75,7 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
-    {props.actions?.map((action) => <View key={action.id} onPress={() => props.onAction?.(action.id)} role="button" accessibilityLabel={action.label} class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
+    {props.actions?.map((action) => <View onPress={() => props.onAction?.(action.id)} role="button" accessibilityLabel={action.label} class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name={action.icon} color={props.colors.muted} />
     </View>)}
     {customControls

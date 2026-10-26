@@ -1,3 +1,5 @@
+/// <reference path="./nsh-jsx.d.ts" />
+
 export { AppearanceSettings } from "./AppearanceSettings";
 export { Button, Dialog, Icon, ListRow, Menu, NavigationItem, PageScroll, SectionTitle, Sidebar, TextField, Titlebar } from "./components";
 export { icons } from "./icons";

@@ -3,7 +3,7 @@
 #![cfg(target_os = "macos")]
 
 use imago_native_sidebar::Row;
-use nsh_core::ui::prelude::*;
+use nsh_core::prelude::*;
 use nsh_platform_macos::{AppView, Root};
 
 #[component]
