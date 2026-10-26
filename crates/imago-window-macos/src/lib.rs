@@ -13,22 +13,21 @@ use objc2::{
 };
 use objc2_app_kit::{
     NSApplication, NSApplicationActivationPolicy, NSBackingStoreType, NSBezelStyle, NSBorderType,
-    NSButton, NSCellImagePosition, NSControlTextEditingDelegate, NSFont, NSImage, NSImageView,
-    NSLayoutAttribute, NSLayoutConstraint, NSLineBreakMode, NSMenu, NSMenuItem, NSPopover,
-    NSPopoverBehavior, NSResponder, NSScrollView, NSSearchField, NSSegmentSwitchTracking,
-    NSSegmentedControl, NSSplitViewController, NSSplitViewItem, NSStackView, NSTableCellView,
-    NSTableColumn, NSTableView, NSTableViewDataSource, NSTableViewDelegate, NSTableViewStyle,
-    NSTextAlignment, NSTextField, NSToolbar, NSToolbarDelegate, NSToolbarDisplayMode,
-    NSToolbarFlexibleSpaceItemIdentifier, NSToolbarItem, NSToolbarItemIdentifier,
-    NSToolbarSidebarTrackingSeparatorItemIdentifier, NSToolbarToggleSidebarItemIdentifier,
-    NSUserInterfaceLayoutOrientation, NSView, NSViewController, NSWindow, NSWindowStyleMask,
+    NSButton, NSCellImagePosition, NSControlTextEditingDelegate, NSImage, NSImageView,
+    NSLayoutConstraint, NSLineBreakMode, NSMenu, NSMenuItem, NSPopover, NSPopoverBehavior,
+    NSResponder, NSScrollView, NSSearchField, NSSegmentSwitchTracking, NSSegmentedControl,
+    NSSplitViewController, NSSplitViewItem, NSTableCellView, NSTableColumn, NSTableView,
+    NSTableViewDataSource, NSTableViewDelegate, NSTableViewStyle, NSTextAlignment, NSTextField,
+    NSToolbar, NSToolbarDelegate, NSToolbarDisplayMode, NSToolbarFlexibleSpaceItemIdentifier,
+    NSToolbarItem, NSToolbarItemIdentifier, NSToolbarSidebarTrackingSeparatorItemIdentifier,
+    NSToolbarToggleSidebarItemIdentifier, NSView, NSViewController, NSWindow, NSWindowStyleMask,
     NSWindowTitleVisibility, NSWindowToolbarStyle, NSWorkspace,
 };
 use objc2_foundation::{
     MainThreadMarker, NSArray, NSIndexSet, NSNotification, NSObject, NSObjectProtocol, NSPoint,
     NSRect, NSRectEdge, NSSet, NSSize, NSString, NSTimer,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::process::ExitCode;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -339,13 +338,24 @@ fn source_list(
     table.setStyle(NSTableViewStyle::SourceList);
     table.setHeaderView(None);
     table.setRowHeight(32.0);
+    table.setIntercellSpacing(NSSize::new(0.0, 0.0));
+    table.setAllowsEmptySelection(true);
     table.addTableColumn(&NSTableColumn::new(mtm));
-    let source = Rows::new(mtm, rows, footer);
+    let footer_table = NSTableView::new(mtm);
+    footer_table.setStyle(NSTableViewStyle::SourceList);
+    footer_table.setHeaderView(None);
+    footer_table.setRowHeight(32.0);
+    footer_table.setIntercellSpacing(NSSize::new(0.0, 0.0));
+    footer_table.setAllowsEmptySelection(true);
+    footer_table.addTableColumn(&NSTableColumn::new(mtm));
+    let source = Rows::new(mtm, rows, footer, table.clone(), footer_table.clone());
     // SAFETY: `source` is returned to the caller, which keeps it alive for as
     // long as the table; the table holds its data source and delegate weakly.
     unsafe {
         table.setDataSource(Some(ProtocolObject::from_ref(&*source)));
         table.setDelegate(Some(ProtocolObject::from_ref(&*source)));
+        footer_table.setDataSource(Some(ProtocolObject::from_ref(&*source)));
+        footer_table.setDelegate(Some(ProtocolObject::from_ref(&*source)));
     }
     table.selectRowIndexes_byExtendingSelection(&NSIndexSet::indexSetWithIndex(0), false);
     let scroll = NSScrollView::new(mtm);
@@ -353,50 +363,14 @@ fn source_list(
     scroll.setDrawsBackground(false);
     scroll.setTranslatesAutoresizingMaskIntoConstraints(false);
 
-    let footer_stack = NSStackView::new(mtm);
-    footer_stack.setOrientation(NSUserInterfaceLayoutOrientation::Vertical);
-    footer_stack.setAlignment(NSLayoutAttribute::Leading);
-    footer_stack.setSpacing(4.0);
-    footer_stack.setTranslatesAutoresizingMaskIntoConstraints(false);
-    for (index, row) in source.ivars().footer.iter().enumerate() {
-        let target: &AnyObject = &source;
-        let button = unsafe {
-            NSButton::buttonWithTitle_target_action(
-                &NSString::from_str(&row.label),
-                Some(target),
-                Some(sel!(footerPressed:)),
-                mtm,
-            )
-        };
-        button.setBordered(false);
-        button.setAlignment(NSTextAlignment::Left);
-        button.setImagePosition(NSCellImagePosition::ImageLeading);
-        button.setFont(Some(&NSFont::systemFontOfSize(13.0)));
-        if let Some(symbol) = row.symbol {
-            button.setImage(
-                NSImage::imageWithSystemSymbolName_accessibilityDescription(
-                    &NSString::from_str(symbol),
-                    Some(&NSString::from_str(&row.label)),
-                )
-                .as_deref(),
-            );
-        }
-        button.setFrame(NSRect::new(
-            NSPoint::new(0.0, 0.0),
-            NSSize::new(220.0, 32.0),
-        ));
-        button.setTranslatesAutoresizingMaskIntoConstraints(false);
-        NSLayoutConstraint::activateConstraints(&NSArray::from_retained_slice(&[
-            button.heightAnchor().constraintEqualToConstant(32.0),
-            button.widthAnchor().constraintEqualToConstant(220.0),
-        ]));
-        button.setTag(index as isize);
-        footer_stack.addArrangedSubview(&button);
-    }
+    let footer_scroll = NSScrollView::new(mtm);
+    footer_scroll.setDocumentView(Some(&footer_table));
+    footer_scroll.setDrawsBackground(false);
+    footer_scroll.setTranslatesAutoresizingMaskIntoConstraints(false);
 
     let sidebar = NSView::new(mtm);
     sidebar.addSubview(&scroll);
-    sidebar.addSubview(&footer_stack);
+    sidebar.addSubview(&footer_scroll);
     let constraints = NSArray::from_retained_slice(&[
         scroll
             .leadingAnchor()
@@ -409,16 +383,19 @@ fn source_list(
             .constraintEqualToAnchor_constant(&sidebar.topAnchor(), 16.0),
         scroll
             .bottomAnchor()
-            .constraintEqualToAnchor_constant(&footer_stack.topAnchor(), -8.0),
-        footer_stack
+            .constraintEqualToAnchor_constant(&footer_scroll.topAnchor(), -8.0),
+        footer_scroll
             .leadingAnchor()
-            .constraintEqualToAnchor_constant(&sidebar.leadingAnchor(), 12.0),
-        footer_stack
+            .constraintEqualToAnchor_constant(&sidebar.leadingAnchor(), 8.0),
+        footer_scroll
             .trailingAnchor()
             .constraintEqualToAnchor_constant(&sidebar.trailingAnchor(), -8.0),
-        footer_stack
+        footer_scroll
             .bottomAnchor()
             .constraintEqualToAnchor_constant(&sidebar.bottomAnchor(), -16.0),
+        footer_scroll
+            .heightAnchor()
+            .constraintEqualToConstant(source.ivars().footer.len() as f64 * 32.0),
     ]);
     NSLayoutConstraint::activateConstraints(&constraints);
     (sidebar, source)
@@ -427,6 +404,9 @@ fn source_list(
 pub struct RowsIvars {
     rows: Vec<Row>,
     footer: Vec<Row>,
+    table: Retained<NSTableView>,
+    footer_table: Retained<NSTableView>,
+    selecting: Cell<bool>,
 }
 
 define_class!(
@@ -441,8 +421,8 @@ define_class!(
 
     unsafe impl NSTableViewDataSource for Rows {
         #[unsafe(method(numberOfRowsInTableView:))]
-        fn number_of_rows(&self, _table: &NSTableView) -> isize {
-            self.ivars().rows.len() as isize
+        fn number_of_rows(&self, table: &NSTableView) -> isize {
+            self.items(table).len() as isize
         }
     }
 
@@ -450,19 +430,21 @@ define_class!(
         #[unsafe(method_id(tableView:viewForTableColumn:row:))]
         fn view_for_row(
             &self,
-            _table: &NSTableView,
+            table: &NSTableView,
             _column: Option<&NSTableColumn>,
             row: isize,
         ) -> Option<Retained<NSView>> {
             let mtm = MainThreadMarker::from(self);
-            self.ivars()
-                .rows
+            self.items(table)
                 .get(row as usize)
                 .map(|row| row_view(mtm, row))
         }
 
         #[unsafe(method(tableViewSelectionDidChange:))]
         fn selection_changed(&self, notification: &NSNotification) {
+            if self.ivars().selecting.get() {
+                return;
+            }
             let Some(table) = notification
                 .object()
                 .and_then(|object| object.downcast::<NSTableView>().ok())
@@ -472,22 +454,16 @@ define_class!(
             let Ok(row) = usize::try_from(table.selectedRow()) else {
                 return;
             };
-            if let Some(row) = self.ivars().rows.get(row) {
-                PRESSES
-                    .lock()
-                    .unwrap_or_else(|poison| poison.into_inner())
-                    .push(row.id.to_owned());
-            }
-        }
-    }
-
-    impl Rows {
-        #[unsafe(method(footerPressed:))]
-        fn footer_pressed(&self, sender: Option<&NSButton>) {
-            let Some(index) = sender.and_then(|button| usize::try_from(button.tag()).ok()) else {
-                return;
-            };
-            if let Some(row) = self.ivars().footer.get(index) {
+            if let Some(row) = self.items(&table).get(row) {
+                self.ivars().selecting.set(true);
+                let other = if std::ptr::eq(&*table, &*self.ivars().table) {
+                    &self.ivars().footer_table
+                } else {
+                    &self.ivars().table
+                };
+                // SAFETY: `deselectAll:` accepts no sender.
+                unsafe { other.deselectAll(None) };
+                self.ivars().selecting.set(false);
                 PRESSES
                     .lock()
                     .unwrap_or_else(|poison| poison.into_inner())
@@ -534,8 +510,28 @@ fn row_view(mtm: MainThreadMarker, row: &Row) -> Retained<NSView> {
 }
 
 impl Rows {
-    fn new(mtm: MainThreadMarker, rows: Vec<Row>, footer: Vec<Row>) -> Retained<Self> {
-        let this = Self::alloc(mtm).set_ivars(RowsIvars { rows, footer });
+    fn items(&self, table: &NSTableView) -> &[Row] {
+        if std::ptr::eq(table, &*self.ivars().footer_table) {
+            &self.ivars().footer
+        } else {
+            &self.ivars().rows
+        }
+    }
+
+    fn new(
+        mtm: MainThreadMarker,
+        rows: Vec<Row>,
+        footer: Vec<Row>,
+        table: Retained<NSTableView>,
+        footer_table: Retained<NSTableView>,
+    ) -> Retained<Self> {
+        let this = Self::alloc(mtm).set_ivars(RowsIvars {
+            rows,
+            footer,
+            table,
+            footer_table,
+            selecting: Cell::new(false),
+        });
         // SAFETY: `init` on a freshly allocated instance of this class.
         unsafe { msg_send![super(this), init] }
     }
