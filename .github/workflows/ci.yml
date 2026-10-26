@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang libfontconfig-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libvulkan1
       - name: Install NSH CLI
-        run: cargo install nsh-cli --version 0.2.0 --locked
+        run: cargo install nsh-cli --version 0.3.0 --locked
       - name: Build and test the shared TSX package
         run: |
           node scripts/build-nsh-icons.mjs

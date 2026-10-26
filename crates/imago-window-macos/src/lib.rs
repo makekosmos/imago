@@ -59,6 +59,13 @@ pub struct TitlebarAction {
     pub label: String,
 }
 
+/// The independently scrolling and pinned parts of a native sidebar.
+#[derive(Default)]
+pub struct SidebarSections {
+    pub rows: Vec<Row>,
+    pub footer: Vec<Row>,
+}
+
 static TITLEBAR_ACTION_PRESSES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 /// Action ids the user picked since the last call, oldest first.
@@ -185,8 +192,10 @@ pub fn run(
     run_with_sidebar_sections(
         title,
         size,
-        rows,
-        Vec::new(),
+        SidebarSections {
+            rows,
+            footer: Vec::new(),
+        },
         Vec::new(),
         root,
         reader_root,
@@ -208,8 +217,10 @@ pub fn run_with_titlebar_actions(
     run_with_sidebar_sections(
         title,
         size,
-        rows,
-        Vec::new(),
+        SidebarSections {
+            rows,
+            footer: Vec::new(),
+        },
         actions,
         root,
         reader_root,
@@ -222,8 +233,7 @@ pub fn run_with_titlebar_actions(
 pub fn run_with_sidebar_sections(
     title: &str,
     size: (f64, f64),
-    rows: Vec<Row>,
-    footer: Vec<Row>,
+    sections: SidebarSections,
     actions: Vec<TitlebarAction>,
     root: fn() -> Root,
     reader_root: fn() -> Root,
@@ -267,7 +277,7 @@ pub fn run_with_sidebar_sections(
     components(&view);
     view.load(App::Rust(root()));
 
-    let (source_list, _rows) = source_list(mtm, rows, footer);
+    let (source_list, _rows) = source_list(mtm, sections.rows, sections.footer);
     let sidebar_controller = NSViewController::new(mtm);
     sidebar_controller.setView(&source_list);
     let content_controller = NSViewController::new(mtm);
@@ -349,7 +359,7 @@ fn source_list(
     footer_stack.setSpacing(4.0);
     footer_stack.setTranslatesAutoresizingMaskIntoConstraints(false);
     for (index, row) in source.ivars().footer.iter().enumerate() {
-        let target: &AnyObject = &*source;
+        let target: &AnyObject = &source;
         let button = unsafe {
             NSButton::buttonWithTitle_target_action(
                 &NSString::from_str(&row.label),
