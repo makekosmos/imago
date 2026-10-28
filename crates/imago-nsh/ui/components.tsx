@@ -1,7 +1,8 @@
-import { effect, Image, Input, Scroll, Text, View } from "nsh";
+import { effect, Image, Scroll, Text, View } from "nsh";
+import { Input } from "nsh/base";
 import { Window as DesktopWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
-import type { IconName, ThemeColors } from "./types";
+import type { IconName, ThemeColors, TitlebarAction } from "./types";
 import { spacing, typography } from "./types";
 
 export function Icon(props: { name: IconName; size?: number; color?: string }) {
@@ -40,7 +41,7 @@ export function Sidebar(props: {
         <Text class="flex-1 text-[13px]" style={{ color: props.colors.muted }}>Проекты</Text>
         <Icon name="plus" color={props.colors.muted} />
       </View>
-      {props.projects.map((project) => <View key={project.id} onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
+      {props.projects.map((project) => <View onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
         <View class="h-2 w-2 rounded-full" style={{ backgroundColor: props.colors.muted }} />
         <Text class="text-[13px]" style={{ color: props.colors.muted }}>{project.title}</Text>
       </View>)}
@@ -55,7 +56,7 @@ export function Sidebar(props: {
   </View>;
 }
 
-export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean }) {
+export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean; actions?: TitlebarAction[]; onAction?: (id: string) => void }) {
   effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
@@ -74,6 +75,9 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
+    {props.actions?.map((action) => <View onPress={() => props.onAction?.(action.id)} role="button" accessibilityLabel={action.label} class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
+      <Icon name={action.icon} color={props.colors.muted} />
+    </View>)}
     {customControls
       ? <View class="flex-row" style={{ width: 138, height: spacing.titlebarHeight }}>
           <View onPress={() => DesktopWindow.minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>

@@ -9,6 +9,8 @@ members = [
     "crates/imago-gpui",
     "crates/mundus-gpui-kit",
     "crates/imago-nsh",
+    "crates/imago-native-sidebar",
+    "crates/imago-window-macos",
     "crates/window-chrome-demo",
 ]
 exclude = ["crates/gpui-fast"]
