@@ -325,10 +325,6 @@ pub fn run_with_sidebar_sections_and_traffic_light_position(
     window.setToolbarStyle(NSWindowToolbarStyle::Unified);
     window.setTitlebarAppearsTransparent(true);
     window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
-    if let Some(position) = traffic_light_position {
-        position_traffic_lights(&window, position);
-    }
-
     let ticker = Ticker::new(
         mtm,
         TickerIvars {
@@ -350,6 +346,9 @@ pub fn run_with_sidebar_sections_and_traffic_light_position(
 
     window.center();
     window.makeKeyAndOrderFront(None);
+    if let Some(position) = traffic_light_position {
+        position_traffic_lights(&window, position);
+    }
     app.activate();
     app.run();
     ExitCode::SUCCESS
