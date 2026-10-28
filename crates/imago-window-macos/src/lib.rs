@@ -330,6 +330,8 @@ pub fn run_with_sidebar_sections_and_traffic_light_position(
         TickerIvars {
             reader_root,
             components,
+            window: window.clone(),
+            traffic_light_position: Cell::new(traffic_light_position),
         },
     );
     // SAFETY: the timer retains `ticker` and runs on the main loop, where the
@@ -346,9 +348,6 @@ pub fn run_with_sidebar_sections_and_traffic_light_position(
 
     window.center();
     window.makeKeyAndOrderFront(None);
-    if let Some(position) = traffic_light_position {
-        position_traffic_lights(&window, position);
-    }
     app.activate();
     app.run();
     ExitCode::SUCCESS
@@ -1640,6 +1639,10 @@ pub struct TickerIvars {
     reader_root: fn() -> Root,
     /// Registers the native components of each reader window.
     components: fn(&AppView),
+    /// Primary window, retained so AppKit traffic lights can be repositioned
+    /// after its first native layout pass.
+    window: Retained<NSWindow>,
+    traffic_light_position: Cell<Option<(f64, f64)>>,
 }
 
 define_class!(
@@ -1654,6 +1657,9 @@ define_class!(
         #[unsafe(method(tick:))]
         fn tick(&self, _timer: &NSTimer) {
             let mtm = MainThreadMarker::from(self);
+            if let Some(position) = self.ivars().traffic_light_position.take() {
+                position_traffic_lights(&self.ivars().window, position);
+            }
             if let Some(hits) = lock(&SEARCH_RESULTS).take() {
                 show_search_results(mtm, hits);
             }
