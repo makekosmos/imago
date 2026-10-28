@@ -20,8 +20,8 @@ use objc2_app_kit::{
     NSTableViewDataSource, NSTableViewDelegate, NSTableViewStyle, NSTextAlignment, NSTextField,
     NSToolbar, NSToolbarDelegate, NSToolbarDisplayMode, NSToolbarFlexibleSpaceItemIdentifier,
     NSToolbarItem, NSToolbarItemIdentifier, NSToolbarSidebarTrackingSeparatorItemIdentifier,
-    NSToolbarToggleSidebarItemIdentifier, NSView, NSViewController, NSWindow, NSWindowStyleMask,
-    NSWindowTitleVisibility, NSWindowToolbarStyle, NSWorkspace,
+    NSToolbarToggleSidebarItemIdentifier, NSView, NSViewController, NSWindow, NSWindowButton,
+    NSWindowStyleMask, NSWindowTitleVisibility, NSWindowToolbarStyle, NSWorkspace,
 };
 use objc2_foundation::{
     MainThreadMarker, NSArray, NSIndexSet, NSNotification, NSObject, NSObjectProtocol, NSPoint,
@@ -238,6 +238,31 @@ pub fn run_with_sidebar_sections(
     reader_root: fn() -> Root,
     components: fn(&AppView),
 ) -> ExitCode {
+    run_with_sidebar_sections_and_traffic_light_position(
+        title,
+        size,
+        sections,
+        actions,
+        None,
+        root,
+        reader_root,
+        components,
+    )
+}
+
+/// Runs a native window with an optional explicit macOS traffic-light
+/// position, measured from the titlebar's left and bottom edges in points.
+/// Match GPUI's `TitlebarOptions::traffic_light_position` behavior.
+pub fn run_with_sidebar_sections_and_traffic_light_position(
+    title: &str,
+    size: (f64, f64),
+    sections: SidebarSections,
+    actions: Vec<TitlebarAction>,
+    traffic_light_position: Option<(f64, f64)>,
+    root: fn() -> Root,
+    reader_root: fn() -> Root,
+    components: fn(&AppView),
+) -> ExitCode {
     let mtm = MainThreadMarker::new().expect("run must be called on the main thread");
     let app = NSApplication::sharedApplication(mtm);
     app.setActivationPolicy(NSApplicationActivationPolicy::Regular);
@@ -300,6 +325,9 @@ pub fn run_with_sidebar_sections(
     window.setToolbarStyle(NSWindowToolbarStyle::Unified);
     window.setTitlebarAppearsTransparent(true);
     window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
+    if let Some(position) = traffic_light_position {
+        position_traffic_lights(&window, position);
+    }
 
     let ticker = Ticker::new(
         mtm,
@@ -325,6 +353,51 @@ pub fn run_with_sidebar_sections(
     app.activate();
     app.run();
     ExitCode::SUCCESS
+}
+
+/// Keep AppKit's native controls while matching GPUI's explicit coordinates.
+fn position_traffic_lights(window: &NSWindow, position: (f64, f64)) {
+    let Some(close) = window.standardWindowButton(NSWindowButton::CloseButton) else {
+        return;
+    };
+    let Some(minimize) = window.standardWindowButton(NSWindowButton::MiniaturizeButton) else {
+        return;
+    };
+    let Some(zoom) = window.standardWindowButton(NSWindowButton::ZoomButton) else {
+        return;
+    };
+    // SAFETY: AppKit owns these standard buttons and keeps them in the
+    // titlebar button group for the lifetime of the window.
+    let Some(button_group) =
+        (unsafe { close.superview() }).and_then(|button_row| unsafe { button_row.superview() })
+    else {
+        return;
+    };
+
+    let close_frame = close.frame();
+    let minimize_frame = minimize.frame();
+    let button_width = close_frame.size.width;
+    let button_height = close_frame.size.height;
+    let button_gap = minimize_frame.origin.x - close_frame.origin.x - button_width;
+    let container_height = button_height + position.1 * 2.0;
+    let mut titlebar_frame = button_group.frame();
+    titlebar_frame.size.height = container_height;
+    titlebar_frame.origin.y = window.frame().size.height - container_height;
+
+    button_group.setFrame(titlebar_frame);
+    close.setFrameOrigin(NSPoint::new(position.0, position.1));
+    minimize.setFrameOrigin(NSPoint::new(
+        position.0 + button_width + button_gap,
+        position.1,
+    ));
+    zoom.setFrameOrigin(NSPoint::new(
+        position.0 + 2.0 * (button_width + button_gap),
+        position.1,
+    ));
+    button_group.updateTrackingAreas();
+    close.updateTrackingAreas();
+    minimize.updateTrackingAreas();
+    zoom.updateTrackingAreas();
 }
 
 /// The system source list: one cell per row, in the sidebar material, the
