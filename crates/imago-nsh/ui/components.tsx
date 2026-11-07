@@ -57,7 +57,7 @@ export function Sidebar(props: {
 }
 
 export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean; actions?: TitlebarAction[]; onAction?: (id: string) => void }) {
-  effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
+  effect(() => DesktopWindow.setTitleBar({ style: "hidden", height: spacing.titlebarHeight }));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
   return <View class="w-full flex-row items-center" style={{ height: controls.height || spacing.titlebarHeight }} desktop={{ windowDrag: true }}>
@@ -95,7 +95,7 @@ export function Button(props: { label: string; colors: ThemeColors; onPress: () 
 }
 
 export function TextField(props: { value: string; placeholder: string; colors: ThemeColors; onChange: (value: string) => void; onSubmit?: (value: string) => void; accessibilityLabel?: string }) {
-  return <Input value={props.value} onChange={props.onChange} onSubmit={props.onSubmit ? (event) => props.onSubmit?.(event.text) : undefined} accessibilityLabel={props.accessibilityLabel} placeholder={props.placeholder} class="h-10 rounded-lg px-3 text-[13px]" style={{ backgroundColor: props.colors.background, color: props.colors.foreground }} />;
+  return <Input value={props.value} onChange={(e) => props.onChange(e.value)} onSubmit={props.onSubmit ? (event) => props.onSubmit?.(event.text) : undefined} accessibilityLabel={props.accessibilityLabel} placeholder={props.placeholder} class="h-10 rounded-lg px-3 text-[13px]" style={{ backgroundColor: props.colors.background, color: props.colors.foreground }} />;
 }
 
 export function ListRow(props: { colors: ThemeColors; children: any; onPress?: () => void }) {
