@@ -1,5 +1,5 @@
 import { Scroll, Text, View } from "nsh";
-import { keymap } from "nsh/keymap";
+import { keymap } from "nsh";
 import { accentChoices, densityChoices } from "./types";
 import type { Appearance, ThemeColors } from "./types";
 
