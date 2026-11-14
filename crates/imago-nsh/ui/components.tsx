@@ -1,6 +1,6 @@
 import { effect, Image, Scroll, Text, View } from "nsh";
 import { Input } from "nsh/base";
-import { Window as DesktopWindow, titleBar } from "nsh/desktop";
+import { currentWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
 import type { IconName, ThemeColors, TitlebarAction } from "./types";
 import { spacing, typography } from "./types";
@@ -57,7 +57,9 @@ export function Sidebar(props: {
 }
 
 export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean; actions?: TitlebarAction[]; onAction?: (id: string) => void }) {
-  effect(() => DesktopWindow.setTitleBar({ style: "hidden", height: spacing.titlebarHeight }));
+  // NSH 0.5 dropped the module-level `Window` API: the running window's
+  // attributes are set through its `WindowRef`.
+  effect(() => currentWindow().set({ titleBar: { style: "hidden", height: spacing.titlebarHeight } }));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
   return <View class="w-full flex-row items-center" style={{ height: controls.height || spacing.titlebarHeight }} desktop={{ windowDrag: true }}>
@@ -80,9 +82,9 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     </View>)}
     {customControls
       ? <View class="flex-row" style={{ width: 138, height: spacing.titlebarHeight }}>
-          <View onPress={() => DesktopWindow.minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>
-          <View onPress={() => DesktopWindow.toggleMaximize()} role="button" accessibilityLabel="Развернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMax" color={props.colors.foreground} size={14} /></View>
-          <View onPress={() => DesktopWindow.close()} role="button" accessibilityLabel="Закрыть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowClose" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => currentWindow().minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => { const window = currentWindow(); window.setMode(window.state()?.mode === "maximized" ? "normal" : "maximized"); }} role="button" accessibilityLabel="Развернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMax" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => currentWindow().close()} role="button" accessibilityLabel="Закрыть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowClose" color={props.colors.foreground} size={14} /></View>
         </View>
       : <View style={{ width: controls.right }} />}
   </View>;

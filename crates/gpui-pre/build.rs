@@ -16,8 +16,20 @@ fn main() {
         println!("cargo::rustc-cfg=gpui_leak_detection");
     }
 
-    // gpui-kit 0.8 retains gpui-pre as a compatibility dependency. The host
-    // embeds its own app manifest; embedding another RT_MANIFEST id=1 causes
-    // CVT1100/LNK1123. Keep the feature for upstream compatibility, but do
-    // not embed gpui-pre's bundled manifest.
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+
+    // Hot reloading is limited to debug builds so the feature can't ship in release binaries,
+    // and to the platforms whose patch transport is implemented.
+    println!("cargo::rustc-check-cfg=cfg(gpui_hot_reload)");
+    if std::env::var_os("CARGO_FEATURE_HOT_RELOAD").is_some()
+        && std::env::var_os("CARGO_CFG_DEBUG_ASSERTIONS").is_some()
+        && matches!(target_os.as_str(), "macos" | "linux" | "windows" | "ios")
+    {
+        println!("cargo::rustc-cfg=gpui_hot_reload");
+    }
+
+    // gpui-kit keeps gpui-pre as a compatibility dependency. The host embeds its
+    // own app manifest; embedding another RT_MANIFEST id=1 causes
+    // CVT1100/LNK1123. Keep the feature for upstream compatibility, but do not
+    // embed gpui-pre's bundled manifest. Kosmos patch.
 }

@@ -4,7 +4,7 @@
 
 use crate::{
     AppContext as _, Bounds, Context, InteractiveElement as _, IntoElement, ParentElement as _,
-    Pixels, PlatformInput, Point, Render, ScrollDelta, ScrollHandle, ScrollWheelEvent,
+    Pixels, PlatformInput, Point, Render, ScrollDelta, ScrollEvent, ScrollHandle,
     StatefulInteractiveElement as _, Styled as _, TestAppContext, TouchPhase, Window, WindowHandle,
     canvas, div, point, px, rgb, size,
 };
@@ -60,7 +60,7 @@ impl Render for Page {
                 );
                 window.paint_quad(crate::fill(thumb, rgb(0x888888)));
                 let view = window.current_view();
-                window.on_mouse_event(move |event: &ScrollWheelEvent, phase, _, cx| {
+                window.on_mouse_event(move |event: &ScrollEvent, phase, _, cx| {
                     if phase.bubble()
                         && viewport().contains(&event.position)
                         && handle.offset() != seen.get()
@@ -136,11 +136,12 @@ fn scroll_both(cx: &mut TestAppContext, update: bool, events: usize) -> usize {
             cx.update_window(window.into(), |_, window, cx| {
                 for _ in 0..events {
                     window.dispatch_event(
-                        PlatformInput::ScrollWheel(ScrollWheelEvent {
+                        PlatformInput::Scroll(ScrollEvent {
                             position: point(px(20.), px(20.)),
                             delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
                             modifiers: Default::default(),
                             touch_phase: TouchPhase::Moved,
+                            ..Default::default()
                         }),
                         cx,
                     );
@@ -192,4 +193,86 @@ fn a_wheel_listener_updating_an_entity_does_not_composite() {
         let composited = scroll_both(&mut cx, true, events);
         assert_eq!(composited, 0, "{events} events a frame");
     }
+}
+
+/// A horizontal scroll container of a fixed width, inside a page. Counts its
+/// renders.
+struct Strip {
+    renders: Rc<Cell<usize>>,
+    handle: ScrollHandle,
+}
+
+impl Render for Strip {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        self.renders.set(self.renders.get() + 1);
+        div().size_full().child(
+            div()
+                .id("strip")
+                .track_scroll(&self.handle)
+                .overflow_x_scroll()
+                .flex()
+                .w(px(100.))
+                .h(px(50.))
+                .child(div().flex_none().w(px(160.)).h(px(50.))),
+        )
+    }
+}
+
+struct StripPage(crate::Entity<Strip>);
+
+impl Render for StripPage {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().child(self.0.clone())
+    }
+}
+
+/// A wheel that cannot move a scroll container's content, because it is
+/// already at the end the wheel points to, changes nothing: the view that
+/// painted the container is not built again. A vertical wheel over a
+/// horizontal container, as a page scrolled past a carousel sends it on every
+/// event, is mapped onto its one axis and is the usual case.
+#[test]
+fn a_wheel_that_cannot_move_its_container_does_not_build_its_view() {
+    let mut cx = TestAppContext::single();
+    let renders = Rc::new(Cell::new(0));
+    let handle = ScrollHandle::new();
+    let window = cx.add_window({
+        let (renders, handle) = (renders.clone(), handle.clone());
+        move |_, cx| StripPage(cx.new(|_| Strip { renders, handle }))
+    });
+    let draw = |cx: &mut TestAppContext| {
+        cx.update_window(window.into(), |_, window, cx| window.draw(cx).clear(cx))
+            .unwrap();
+    };
+    draw(&mut cx);
+    let wheel = |cx: &mut TestAppContext, dy: f32| {
+        let before = renders.get();
+        cx.update_window(window.into(), |_, window, cx| {
+            window.dispatch_event(
+                PlatformInput::Scroll(ScrollEvent {
+                    position: point(px(50.), px(25.)),
+                    delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
+                    modifiers: Default::default(),
+                    touch_phase: TouchPhase::Moved,
+                    ..Default::default()
+                }),
+                cx,
+            );
+        })
+        .unwrap();
+        draw(cx);
+        renders.get() - before
+    };
+    // The window's first wheel changes its input modality, which draws it
+    // again whole.
+    wheel(&mut cx, 20.);
+
+    assert_eq!(wheel(&mut cx, 20.), 0, "a wheel towards the start it is at");
+    assert_eq!(handle.offset().x, px(0.));
+    assert_eq!(wheel(&mut cx, -20.), 1, "a wheel with room");
+    assert_eq!(handle.offset().x, px(-20.));
+    assert_eq!(wheel(&mut cx, -60.), 1, "a wheel past the end");
+    assert_eq!(handle.offset().x, px(-60.));
+    assert_eq!(wheel(&mut cx, -20.), 0, "a wheel towards the end it is at");
+    assert_eq!(handle.offset().x, px(-60.));
 }

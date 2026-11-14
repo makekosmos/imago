@@ -3,9 +3,9 @@
 
 use crate::{
     AbsoluteLength, App, AvailableSpace, DefiniteLength, Edges, GridTemplate, LayoutId, Length,
-    Pixels, Size, Style, TaffyLayoutEngine, Window,
+    Pixels, Size, Style, Window,
     fast::stats::LayoutStats,
-    taffy::{MeasureFn, NodeContext, ToTaffy as _},
+    taffy::{MeasureFn, NodeContext, TaffyLayoutEngine, ToTaffy as _},
     util::round_to_device_pixel,
 };
 use collections::{FxHashMap, FxHashSet, FxHasher};
@@ -1175,37 +1175,6 @@ fn request_measured_node(
     node.measure_log = Some(log);
 
     id
-}
-
-/// The tree as [`TaffyLayoutEngine::compute_layout`] lays it out: each leaf is
-/// measured by a function of the constraints Taffy measures it under. Since
-/// 0.14, Taffy hands that function the leaf's whole layout instead; this lays
-/// the leaf out around the measurement, as Taffy did before.
-pub(crate) struct MeasuredTaffy<'a>(pub(crate) &'a mut TaffyTree<NodeContext>);
-
-impl MeasuredTaffy<'_> {
-    pub(crate) fn compute_layout_with_measure(
-        self,
-        node: taffy::NodeId,
-        available_space: taffy::Size<taffy::AvailableSpace>,
-        mut measure: impl FnMut(
-            taffy::Size<Option<f32>>,
-            taffy::Size<taffy::AvailableSpace>,
-            taffy::NodeId,
-            Option<&mut NodeContext>,
-            &taffy::Style,
-        ) -> taffy::Size<f32>,
-    ) -> taffy::TaffyResult<()> {
-        self.0
-            .compute_layout_with_measure(node, available_space, |inputs, id, context, style| {
-                taffy::compute_leaf_layout(
-                    inputs,
-                    style,
-                    |_, _| 0.0,
-                    |known, available| measure(known, available, id, context, style),
-                )
-            })
-    }
 }
 
 /// Measures, with the closures they were given this frame, the measured
