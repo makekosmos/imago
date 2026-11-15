@@ -1,7 +1,8 @@
-import { effect, Image, Input, Scroll, Text, View } from "nsh";
-import { Window as DesktopWindow, titleBar } from "nsh/desktop";
+import { effect, Image, Scroll, Text, View } from "nsh";
+import { Input } from "nsh/base";
+import { currentWindow, titleBar } from "nsh/desktop";
 import { icons } from "./icons";
-import type { IconName, ThemeColors } from "./types";
+import type { IconName, ThemeColors, TitlebarAction } from "./types";
 import { spacing, typography } from "./types";
 
 export function Icon(props: { name: IconName; size?: number; color?: string }) {
@@ -40,7 +41,7 @@ export function Sidebar(props: {
         <Text class="flex-1 text-[13px]" style={{ color: props.colors.muted }}>Проекты</Text>
         <Icon name="plus" color={props.colors.muted} />
       </View>
-      {props.projects.map((project) => <View key={project.id} onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
+      {props.projects.map((project) => <View onPress={() => props.onProject(project.id)} role="button" class="h-8 flex-row items-center gap-2">
         <View class="h-2 w-2 rounded-full" style={{ backgroundColor: props.colors.muted }} />
         <Text class="text-[13px]" style={{ color: props.colors.muted }}>{project.title}</Text>
       </View>)}
@@ -55,8 +56,10 @@ export function Sidebar(props: {
   </View>;
 }
 
-export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean }) {
-  effect(() => DesktopWindow.setTitleBar("hidden", spacing.titlebarHeight));
+export function Titlebar(props: { title: string; icon: IconName; colors: ThemeColors; onToggleSidebar: () => void; onAppearance: () => void; sidebarVisible?: boolean; showPageIdentity?: boolean; actions?: TitlebarAction[]; onAction?: (id: string) => void }) {
+  // NSH 0.5 dropped the module-level `Window` API: the running window's
+  // attributes are set through its `WindowRef`.
+  effect(() => currentWindow().set({ titleBar: { style: "hidden", height: spacing.titlebarHeight } }));
   const controls = titleBar();
   const customControls = controls.left === 0 && controls.right === 0;
   return <View class="w-full flex-row items-center" style={{ height: controls.height || spacing.titlebarHeight }} desktop={{ windowDrag: true }}>
@@ -74,11 +77,14 @@ export function Titlebar(props: { title: string; icon: IconName; colors: ThemeCo
     <View onPress={props.onAppearance} role="button" accessibilityLabel="Настройки отображения" class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
       <Icon name="display" color={props.colors.muted} />
     </View>
+    {props.actions?.map((action) => <View onPress={() => props.onAction?.(action.id)} role="button" accessibilityLabel={action.label} class="w-10 items-center justify-center" style={{ height: spacing.titlebarHeight }}>
+      <Icon name={action.icon} color={props.colors.muted} />
+    </View>)}
     {customControls
       ? <View class="flex-row" style={{ width: 138, height: spacing.titlebarHeight }}>
-          <View onPress={() => DesktopWindow.minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>
-          <View onPress={() => DesktopWindow.toggleMaximize()} role="button" accessibilityLabel="Развернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMax" color={props.colors.foreground} size={14} /></View>
-          <View onPress={() => DesktopWindow.close()} role="button" accessibilityLabel="Закрыть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowClose" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => currentWindow().minimize()} role="button" accessibilityLabel="Свернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMin" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => { const window = currentWindow(); window.setMode(window.state()?.mode === "maximized" ? "normal" : "maximized"); }} role="button" accessibilityLabel="Развернуть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowMax" color={props.colors.foreground} size={14} /></View>
+          <View onPress={() => currentWindow().close()} role="button" accessibilityLabel="Закрыть окно" class="w-[46px] items-center justify-center" style={{ height: spacing.titlebarHeight }}><Icon name="windowClose" color={props.colors.foreground} size={14} /></View>
         </View>
       : <View style={{ width: controls.right }} />}
   </View>;
@@ -91,7 +97,7 @@ export function Button(props: { label: string; colors: ThemeColors; onPress: () 
 }
 
 export function TextField(props: { value: string; placeholder: string; colors: ThemeColors; onChange: (value: string) => void; onSubmit?: (value: string) => void; accessibilityLabel?: string }) {
-  return <Input value={props.value} onChange={props.onChange} onSubmit={props.onSubmit ? (event) => props.onSubmit?.(event.text) : undefined} accessibilityLabel={props.accessibilityLabel} placeholder={props.placeholder} class="h-10 rounded-lg px-3 text-[13px]" style={{ backgroundColor: props.colors.background, color: props.colors.foreground }} />;
+  return <Input value={props.value} onChange={(e) => props.onChange(e.value)} onSubmit={props.onSubmit ? (event) => props.onSubmit?.(event.text) : undefined} accessibilityLabel={props.accessibilityLabel} placeholder={props.placeholder} class="h-10 rounded-lg px-3 text-[13px]" style={{ backgroundColor: props.colors.background, color: props.colors.foreground }} />;
 }
 
 export function ListRow(props: { colors: ThemeColors; children: any; onPress?: () => void }) {

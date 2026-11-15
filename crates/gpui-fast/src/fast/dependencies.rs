@@ -466,7 +466,8 @@ impl App {
             offset_reads: 0..0,
         };
         self.entities.mark_access_boundary();
-        self.entities.extend_accessed(dependencies.entities.iter());
+        self.entities
+            .extend_accessed_recorded(dependencies.entities.iter());
         self.entities.mark_access_boundary();
         if self.entities.is_recording() {
             self.dependencies
@@ -624,6 +625,10 @@ pub(crate) struct EntityAccessLog {
 }
 
 impl EntityAccessLog {
+    pub(crate) fn update_generation(&self) -> u64 {
+        self.update_generation
+    }
+
     /// How many accesses the log holds.
     fn len(&self) -> usize {
         self.access_log.borrow().len()
@@ -668,6 +673,12 @@ impl EntityAccessLog {
 }
 
 impl EntityMap {
+    /// Whether `entity_id` has not been released. A leased entity is alive,
+    /// though its slot is empty while it is leased.
+    pub(crate) fn is_alive(&self, entity_id: EntityId) -> bool {
+        self.ref_counts.read().counts.contains_key(entity_id)
+    }
+
     /// Marks where the access log stands as a boundary between stretches.
     pub(crate) fn mark_access_boundary(&mut self) {
         let log = &mut self.access_log;
@@ -679,15 +690,21 @@ impl EntityMap {
         self.access_log.write_generation.get()
     }
 
-    pub fn extend_accessed<'a>(&mut self, entities: impl IntoIterator<Item = &'a EntityId>) {
-        let accessed_entities = self.accessed_entities.get_mut();
-        let recording = self.access_log.recordings.get() > 0;
-        for entity_id in entities {
-            accessed_entities.insert(*entity_id);
-            if recording {
-                self.access_log.access_log.borrow_mut().push(*entity_id);
-            }
+    /// Records entities accessed by a reused draw, as upstream's
+    /// [`EntityMap::extend_accessed`] does, and adds them to the access log
+    /// when a recording is open.
+    pub(crate) fn extend_accessed_recorded<'a>(
+        &mut self,
+        entities: impl IntoIterator<Item = &'a EntityId>,
+    ) {
+        let entities = entities.into_iter().copied();
+        if !self.is_recording() {
+            self.extend_accessed(entities);
+            return;
         }
+        let entities: SmallVec<[EntityId; 16]> = entities.collect();
+        self.extend_accessed(entities.iter().copied());
+        self.access_log.access_log.borrow_mut().extend(entities);
     }
 
     /// Whether any recording is open.
@@ -1056,6 +1073,15 @@ impl StateVersion {
 }
 
 impl crate::StateInner {
+    /// Whether the list waits to settle where it is scrolled to: a scroll
+    /// adjustment for a remeasured item, or a position held while items are
+    /// provisionally measured.
+    pub(crate) fn scroll_pending(&self) -> bool {
+        self.scroll_anchor.is_some_and(|anchor| {
+            anchor.pending.is_some() || anchor.provisional || anchor.pending_end
+        })
+    }
+
     /// Marks the list's state changed if pausing it stops it following its
     /// tail. See [`crate::ListState::pause_following_tail`].
     pub(crate) fn note_following_paused(&self) {
@@ -1073,7 +1099,8 @@ impl crate::StateInner {
         follow_state: crate::FollowState,
         pending: bool,
     ) {
-        let moved = scroll_top.moves_from(self.logical_scroll_top, pending);
+        let moved =
+            scroll_top.moves_from(self.scroll_anchor.map(|anchor| anchor.position), pending);
         self.version
             .bump_if(moved || self.follow_state != follow_state);
     }
@@ -1107,7 +1134,7 @@ impl ListScrollStart {
     /// waiting to be applied read from `state`.
     #[inline(always)]
     pub(crate) fn note_scrolled(self, state: &crate::StateInner, scroll_top: &ListOffset) {
-        state.note_scrolled_to(scroll_top, self.0, state.pending_scroll.is_some());
+        state.note_scrolled_to(scroll_top, self.0, state.scroll_pending());
     }
 }
 
@@ -1242,6 +1269,31 @@ impl RenderDependencies {
             },
             ..self.clone()
         }
+    }
+
+    /// These dependencies without the entities that have been released,
+    /// which cannot change any more.
+    pub(crate) fn without_released_entities(mut self, cx: &App) -> Self {
+        if self
+            .entities
+            .iter()
+            .all(|entity| cx.entities.is_alive(*entity))
+        {
+            return self;
+        }
+        self.entities = self
+            .entities
+            .iter()
+            .copied()
+            .filter(|entity| cx.entities.is_alive(*entity))
+            .collect();
+        self
+    }
+
+    /// Whether these dependencies hold the very list of entities `other`
+    /// holds, as a union with nothing new to add leaves it.
+    pub(crate) fn shares_entities_with(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.entities, &other.entities)
     }
 
     /// Both sets of dependencies at once, as of the earlier generation, so

@@ -1,6 +1,5 @@
 import { append, bindProp, component, element, insert, prop, setup, text } from "nsh:rt";
 import { effect, mount, signal } from "nsh";
-import "nsh/keymap";
 import { Window, titleBar } from "nsh/desktop";
 
 //#region ../../../ui/types.ts
@@ -138,7 +137,6 @@ function Sidebar(props) {
 		append(__nsh_hv5, __nsh_hv6);
 		insert(__nsh_hv5, () => props.projects.map((project) => (() => {
 			const __nsh_hv9 = element("view");
-			bindProp(__nsh_hv9, "key", () => project.id);
 			prop(__nsh_hv9, "onPress", () => props.onProject(project.id));
 			prop(__nsh_hv9, "role", "button");
 			prop(__nsh_hv9, "class", "h-8 flex-row items-center gap-2");
@@ -262,61 +260,77 @@ function Titlebar(props) {
 			}), __nsh_hv24);
 			return __nsh_hv23;
 		})(), __nsh_hv25);
-		insert(__nsh_hv17, () => customControls ? (() => {
+		insert(__nsh_hv17, [() => props.actions?.map((action) => (() => {
 			const __nsh_hv26 = element("view");
-			prop(__nsh_hv26, "class", "flex-row");
-			bindProp(__nsh_hv26, "style", () => ({
+			prop(__nsh_hv26, "onPress", () => props.onAction?.(action.id));
+			prop(__nsh_hv26, "role", "button");
+			bindProp(__nsh_hv26, "accessibilityLabel", () => action.label);
+			prop(__nsh_hv26, "class", "w-10 items-center justify-center");
+			bindProp(__nsh_hv26, "style", () => ({ height: spacing.titlebarHeight }));
+			insert(__nsh_hv26, component(Icon, {
+				get name() {
+					return action.icon;
+				},
+				get color() {
+					return props.colors.muted;
+				}
+			}));
+			return __nsh_hv26;
+		})()), () => customControls ? (() => {
+			const __nsh_hv27 = element("view");
+			prop(__nsh_hv27, "class", "flex-row");
+			bindProp(__nsh_hv27, "style", () => ({
 				width: 138,
 				height: spacing.titlebarHeight
 			}));
-			const __nsh_hv27 = element("view");
-			prop(__nsh_hv27, "onPress", () => Window.minimize());
-			prop(__nsh_hv27, "role", "button");
-			prop(__nsh_hv27, "accessibilityLabel", "Свернуть окно");
-			prop(__nsh_hv27, "class", "w-[46px] items-center justify-center");
-			bindProp(__nsh_hv27, "style", () => ({ height: spacing.titlebarHeight }));
-			insert(__nsh_hv27, component(Icon, {
+			const __nsh_hv28 = element("view");
+			prop(__nsh_hv28, "onPress", () => Window.minimize());
+			prop(__nsh_hv28, "role", "button");
+			prop(__nsh_hv28, "accessibilityLabel", "Свернуть окно");
+			prop(__nsh_hv28, "class", "w-[46px] items-center justify-center");
+			bindProp(__nsh_hv28, "style", () => ({ height: spacing.titlebarHeight }));
+			insert(__nsh_hv28, component(Icon, {
 				name: "windowMin",
 				get color() {
 					return props.colors.foreground;
 				},
 				size: 14
 			}));
-			const __nsh_hv28 = element("view");
-			prop(__nsh_hv28, "onPress", () => Window.toggleMaximize());
-			prop(__nsh_hv28, "role", "button");
-			prop(__nsh_hv28, "accessibilityLabel", "Развернуть окно");
-			prop(__nsh_hv28, "class", "w-[46px] items-center justify-center");
-			bindProp(__nsh_hv28, "style", () => ({ height: spacing.titlebarHeight }));
-			insert(__nsh_hv28, component(Icon, {
+			const __nsh_hv29 = element("view");
+			prop(__nsh_hv29, "onPress", () => Window.toggleMaximize());
+			prop(__nsh_hv29, "role", "button");
+			prop(__nsh_hv29, "accessibilityLabel", "Развернуть окно");
+			prop(__nsh_hv29, "class", "w-[46px] items-center justify-center");
+			bindProp(__nsh_hv29, "style", () => ({ height: spacing.titlebarHeight }));
+			insert(__nsh_hv29, component(Icon, {
 				name: "windowMax",
 				get color() {
 					return props.colors.foreground;
 				},
 				size: 14
 			}));
-			const __nsh_hv29 = element("view");
-			prop(__nsh_hv29, "onPress", () => Window.close());
-			prop(__nsh_hv29, "role", "button");
-			prop(__nsh_hv29, "accessibilityLabel", "Закрыть окно");
-			prop(__nsh_hv29, "class", "w-[46px] items-center justify-center");
-			bindProp(__nsh_hv29, "style", () => ({ height: spacing.titlebarHeight }));
-			insert(__nsh_hv29, component(Icon, {
+			const __nsh_hv30 = element("view");
+			prop(__nsh_hv30, "onPress", () => Window.close());
+			prop(__nsh_hv30, "role", "button");
+			prop(__nsh_hv30, "accessibilityLabel", "Закрыть окно");
+			prop(__nsh_hv30, "class", "w-[46px] items-center justify-center");
+			bindProp(__nsh_hv30, "style", () => ({ height: spacing.titlebarHeight }));
+			insert(__nsh_hv30, component(Icon, {
 				name: "windowClose",
 				get color() {
 					return props.colors.foreground;
 				},
 				size: 14
 			}));
-			append(__nsh_hv26, __nsh_hv27);
-			append(__nsh_hv26, __nsh_hv28);
-			append(__nsh_hv26, __nsh_hv29);
-			return __nsh_hv26;
+			append(__nsh_hv27, __nsh_hv28);
+			append(__nsh_hv27, __nsh_hv29);
+			append(__nsh_hv27, __nsh_hv30);
+			return __nsh_hv27;
 		})() : (() => {
-			const __nsh_hv30 = element("view");
-			bindProp(__nsh_hv30, "style", () => ({ width: controls.right }));
-			return __nsh_hv30;
-		})());
+			const __nsh_hv31 = element("view");
+			bindProp(__nsh_hv31, "style", () => ({ width: controls.right }));
+			return __nsh_hv31;
+		})()]);
 		return __nsh_hv17;
 	})();
 }

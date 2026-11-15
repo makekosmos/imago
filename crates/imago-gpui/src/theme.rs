@@ -254,25 +254,27 @@ pub fn apply(cx: &mut App) {
 }
 
 fn config(p: &Palette, mode: ThemeMode) -> ThemeConfig {
-    ThemeConfig {
-        name: if mode.is_dark() {
-            "Imago Dark".into()
-        } else {
-            "Imago Light".into()
-        },
-        mode,
-        // Root uses this as the rem unit, including spacing and control sizes.
-        // Agenda uses a 16px rem with explicit 13px body/sidebar text.
-        font_size: Some(16.0),
-        font_family: Some("Inter".into()),
-        mono_font_family: None,
-        mono_font_size: None,
-        radius: Some(8),
-        radius_lg: Some(10),
-        shadow: Some(true),
-        colors: colors(p),
-        ..Default::default()
-    }
+    // gpui-component 0.9 marks `ThemeConfig` `#[non_exhaustive]`, so it cannot be
+    // built with a struct expression outside the crate; start from the default
+    // and set the fields Imago owns.
+    let mut config = ThemeConfig::default();
+    config.name = if mode.is_dark() {
+        "Imago Dark".into()
+    } else {
+        "Imago Light".into()
+    };
+    config.mode = mode;
+    // Root uses this as the rem unit, including spacing and control sizes.
+    // Agenda uses a 16px rem with explicit 13px body/sidebar text.
+    config.font_size = Some(16.0);
+    config.font_family = Some("Inter".into());
+    config.mono_font_family = None;
+    config.mono_font_size = None;
+    config.radius = Some(8);
+    config.radius_lg = Some(10);
+    config.shadow = Some(true);
+    config.colors = colors(p);
+    config
 }
 
 fn hex(v: u32) -> Option<SharedString> {

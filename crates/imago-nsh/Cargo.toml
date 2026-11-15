@@ -6,11 +6,11 @@ publish = false
 description = "Shared NSH host and Mundus design and Engine crates"
 
 [dependencies]
-gpui = { package = "gpui-kit", version = "=0.8.0", features = ["gpui-fast"] }
+gpui = { package = "gpui-kit", version = "=0.9.1", features = ["gpui-fast"] }
 imago-gpui = { path = "../imago-gpui" }
 mundus-gpui-kit = { path = "../mundus-gpui-kit" }
-nsh-base = "=0.2.0"
-nsh-platform-gpui = { version = "=0.2.0", default-features = false, features = ["js"] }
+nsh-base = "=0.5.1"
+nsh-platform-gpui = { version = "=0.5.1", default-features = false, features = ["js"] }
 
 [dev-dependencies]
-gpui = { package = "gpui-kit", version = "=0.8.0", features = ["gpui-fast", "test-support"] }
+gpui = { package = "gpui-kit", version = "=0.9.1", features = ["gpui-fast", "test-support"] }
