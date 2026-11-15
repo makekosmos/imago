@@ -272,36 +272,47 @@ export function PillButton(props: { label: string; colors: ApplicationTheme; ton
   const color = tone === "accent" ? props.colors.accentText : tone === "danger" ? props.colors.danger : props.colors.foreground;
   return <View onPress={props.disabled ? undefined : props.onPress} role="button" accessibilityLabel={props.label}
     accessibilityState={{ disabled: !!props.disabled }} hoverStyle={{ opacity: 0.9 }}
-    class="items-center justify-center rounded-full" style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, backgroundColor: background, opacity: props.disabled ? 0.5 : 1 }}>
+    class="items-center justify-center rounded-full" style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, backgroundColor: background, opacity: props.disabled ? 0.5 : 1, cursor: props.disabled ? "default" : "pointer" }}>
     <Text style={{ fontSize: 13, lineHeight: 15, fontWeight: "500", color }}>{props.label}</Text>
   </View>;
 }
 
 export function Switch(props: { value: boolean; colors: ApplicationTheme; onChange: (value: boolean) => void; accessibilityLabel?: string }) {
   const off = !props.value;
+  // A 22-point track and an 18-point knob: 2 points of air above and below, and
+  // the same at either end. The knob used to sit 1 from the top and 3 from the
+  // bottom, which is what made the switch look lopsided.
+  const SIDE = 2;
+  const KNOB = 18;
   return <View onPress={() => props.onChange(!props.value)} role="switch" accessibilityLabel={props.accessibilityLabel}
     accessibilityState={{ checked: props.value }} class="justify-center"
     style={{
       width: 44,
       height: 22,
-      marginTop: 1,
       borderRadius: 11,
       backgroundColor: props.value ? props.colors.accent : (props.colors.input ?? props.colors.raised),
-      borderWidth: off ? 1 : 0,
-      borderColor: "#2f3543",
+      boxShadow: off ? [{ x: 0, y: 0, spread: 1, color: "#2f3543", inset: true }] : undefined,
+      cursor: "pointer",
+      transitionProperty: "background-color",
+      transitionDuration: 160,
+      transitionTimingFunction: "ease-out",
     }}>
     <View style={{
       position: "absolute",
-      width: 24,
-      height: 18,
-      borderRadius: 9,
-      left: props.value ? 18 : 1,
-      top: 1,
+      width: KNOB,
+      height: KNOB,
+      borderRadius: KNOB / 2,
+      left: SIDE,
+      top: SIDE,
       backgroundColor: "#ffffff",
       boxShadow: "0 1px 1.75px #00000038",
+      transform: `translateX(${props.value ? 44 - KNOB - SIDE * 2 : 0}px)`,
+      transitionProperty: "transform",
+      transitionDuration: 160,
+      transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
     }} />
     {off
-      ? <View style={{ position: "absolute", width: 6, height: 6, borderRadius: 3, borderWidth: 0.6, borderColor: "#ffffff", opacity: 0.75, left: 32, top: 7 }} />
+      ? <View style={{ position: "absolute", width: 6, height: 6, borderRadius: 3, borderWidth: 0.6, borderColor: "#ffffff", opacity: 0.75, left: 32, top: 8 }} />
       : null}
   </View>;
 }
