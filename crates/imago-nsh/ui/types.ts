@@ -66,7 +66,7 @@ export const spacing = {
 
 /** Metrics of the settings shell the Manager and NSH preference panes wear. */
 export const settingsMetrics = {
-  sidebarWidth: 282,
+  sidebarWidth: 240,
   sidebarPadding: 8,
   sidebarTop: 16,
   searchHeight: 32,
