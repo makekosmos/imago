@@ -1,4 +1,5 @@
 import { Scroll, Text, View } from "nsh";
+import type { DimensionValue } from "nsh";
 import { Input } from "nsh/base";
 import { titleBar } from "nsh/desktop";
 import { Icon } from "./components";
@@ -241,6 +242,60 @@ export function CardRow(props: {
     </View>
     {props.right ?? null}
   </View>;
+}
+
+/** A block standing where a value will be: the page is reading, it is not
+ * empty. It pulses, so it reads as motion and not as a disabled control. */
+export function Skeleton(props: {
+  colors: ApplicationTheme;
+  width?: DimensionValue;
+  height?: number;
+  radius?: number;
+}) {
+  return <View style={{
+    width: props.width ?? "100%",
+    height: props.height ?? 12,
+    borderRadius: props.radius ?? 6,
+    backgroundColor: props.colors.raised,
+    opacity: 0.75,
+    animationName: "pulse",
+    animationDuration: 1200,
+    animationTimingFunction: "ease-in-out",
+  }} />;
+}
+
+/** One skeleton row, as tall as the `CardRow` it stands in for: the page keeps
+ * its height while it reads, so nothing jumps when the answers land. */
+export function SkeletonRow(props: { colors: ApplicationTheme; last?: boolean; avatar?: boolean }) {
+  return <View class="flex-row items-center gap-2.5" style={{
+    height: M.cardRowHeight,
+    paddingLeft: M.cardPaddingX,
+    paddingRight: M.cardPaddingX,
+    borderBottomWidth: props.last ? 0 : 1,
+    borderColor: props.colors.border,
+  }}>
+    {props.avatar ? <Skeleton colors={props.colors} width={35} height={35} radius={18} /> : null}
+    <View class="flex-1" style={{ gap: 6 }}>
+      <Skeleton colors={props.colors} width="40%" height={11} />
+      <Skeleton colors={props.colors} width="62%" height={9} />
+    </View>
+  </View>;
+}
+
+/** A card of skeleton rows: what a page draws instead of «nothing here» while
+ * the Engine has not answered it yet. */
+export function SkeletonCard(props: { colors: ApplicationTheme; rows?: number; avatar?: boolean }) {
+  const rows = props.rows ?? 2;
+  return <Card colors={props.colors}>
+    {Array.from({ length: rows }, (_, index) => (
+      <SkeletonRow
+        key={`skeleton-${index}`}
+        colors={props.colors}
+        avatar={props.avatar}
+        last={index === rows - 1}
+      />
+    ))}
+  </Card>;
 }
 
 /** Label on the left, control on the right — the "Название" row of settings. */
