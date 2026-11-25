@@ -1,6 +1,6 @@
-# Kosmos patch: gpui-fast 0.1.17
+# Kosmos patch: gpui-fast 0.1.19
 
-Forked from crates.io `gpui-fast` 0.1.17. One change, test-only:
+Forked from crates.io `gpui-fast` 0.1.19. One change, test-only:
 `src/platform/test/window.rs` — TestWindow's `PlatformWindow::a11y_init`
 immediately invokes `A11yCallbacks::activation`, because headless test windows
 have no platform accessibility adapter. This enables

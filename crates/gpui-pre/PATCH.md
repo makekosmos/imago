@@ -1,6 +1,6 @@
-# Kosmos patch: gpui-pre 0.3.12 manifest no-op
+# Kosmos patch: gpui-pre 0.3.14 manifest no-op
 
-Forked from crates.io `gpui-pre` 0.3.12. gpui-kit keeps gpui-pre as a
+Forked from crates.io `gpui-pre` 0.3.14. gpui-kit keeps gpui-pre as a
 compatibility dependency, and its default features enable `windows-manifest`.
 Kosmos GUI hosts embed their own RT_MANIFEST resource; gpui-pre's second resource
 triggers MSVC CVT1100/LNK1123.
